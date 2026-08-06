@@ -1,6 +1,6 @@
 # AI Career Intelligence Platform — Architecture & Complete Workflows
 
-The **AI Career Intelligence Platform** is a multi-agent AI application designed for Faculty Development Program (FDP) demonstrations. It showcases **Multi-Agent Orchestration**, **Retrieval-Augmented Generation (RAG)**, **Model Context Protocol (MCP) Tools**, and an **Ultra-Low Latency Voice Agent**.
+The **AI Career Intelligence Platform** is an end-to-end multi-agent career preparation system. It features **Multi-Agent Supervisor Orchestration**, **Inline RAG Grounding**, **Model Context Protocol (MCP) Tools**, **100-Point STAR Performance Grading**, and a **100% Hands-Free Voice Interview Simulator**.
 
 ---
 
@@ -8,11 +8,13 @@ The **AI Career Intelligence Platform** is a multi-agent AI application designed
 
 ```
 [ User UI Layer ]
-  ├── Home & Upload Hub (/)
-  ├── ATS Analysis Dashboard (/dashboard)
-  ├── STAR Interview Preparation (/interview)
-  ├── Hands-Free Voice Lab (/voice-lab)
-  └── RAG Knowledge Base (/knowledge-base)
+  ├── Home & Upload Hub (/) ────▶ Active Session Resume Banner & ATS Scoring
+  ├── Analysis Dashboard (/dashboard) ──▶ ATS Metrics, Skills Match & Nested Knowledge Explorer Tab
+  └── Practice Hub (/practice) ──▶ Text / Voice Modes with Single-Question Interview Flow
+        │
+        ▼
+[ Session & State Layer ] (lib/session.ts & providers.tsx)
+  └── Persistent localStorage SessionData (resume, JD, ATS results, questions, practice history, traces)
         │
         ▼
 [ Multi-Agent Supervisor Layer ] (lib/agents/orchestrator.ts)
@@ -21,12 +23,12 @@ The **AI Career Intelligence Platform** is a multi-agent AI application designed
   ├── RAG Grounding Agent (llama-3.3-70b-versatile)
   └── Quality Reviewer / Critic Agent (llama-3.1-8b-instant)
         │
-   ┌────┴──────────────────────────────┐
-   ▼                                   ▼
+    ┌───┴───────────────────────────────┐
+    ▼                                   ▼
 [ In-Memory RAG Engine ]     [ MCP Interface Layer ]
 (lib/rag/)                  (lib/mcp/)
   ├── MemoryVectorStore        ├── Web Search Tool (`web_search`)
-  ├── LocalEmbeddings (TF-IDF) ├── Company Research Tool (`research_company`)
+  ├── LocalEmbeddings          ├── Company Research Tool (`research_company`)
   └── Domain Knowledge Base    └── GitHub Profile Tool (`get_github_profile`)
         (4 JSON datasets)
 ```
@@ -37,27 +39,31 @@ The **AI Career Intelligence Platform** is a multi-agent AI application designed
 
 ```mermaid
 graph TD
-    A[Step 1: Candidate Uploads Resume & Pastes JD] --> B[Multi-Agent Analysis Pipeline Executed]
-    B --> C[Step 2: ATS Score, Skill Match & Insights Displayed]
-    C --> D[Candidate Clicks 'Start Voice Practice' Button]
-    D --> E[Step 3: Direct Transition to Voice Lab]
-    E --> F[AI Voice Agent Reads Question 1 Aloud via TTS]
-    F --> G[Microphone Auto-Turns ON & Candidate Speaks Answer]
-    G --> H{5 Seconds of Silence Detected?}
-    H -- Yes --> I[Auto-Submits Voice Transcript]
-    H -- No (Manually Click Stop) --> I
-    I --> J[Sub-300ms Streaming Evaluation via Groq fast-model]
-    J --> K[AI Speaks Feedback & Score Aloud]
-    K --> L{More Questions?}
-    L -- Yes --> M[Auto-Advances to Question N & Repeats Loop]
-    L -- No / User Pauses --> N[Complete Session Transcript & Score Breakdown]
+    A[Step 1: Upload Resume PDF + Paste Job Description] --> B[Stage-by-Stage Parallel Multi-Agent Execution]
+    B --> C[Step 2: ATS Match Score, Skills Breakdown & Inline RAG Citations Displayed]
+    C --> D[Active Session Persisted in localStorage & Session Banner Activated]
+    D --> E[Step 3: Candidate Enters Practice Hub /practice]
+    E --> F[Mode Selected: Text or Hands-Free Voice]
+    F --> G[Step 4: Candidate Answers Question N via Mic or Textarea]
+    G --> H{Voice Mode: 5-Second Silence Detected?}
+    H -- Yes --> I[Auto-Submits Answer Transcript]
+    H -- No (Click Submit) --> I
+    I --> J[Evaluated via 100-Point STAR Matrix: S 25 + T 25 + A 25 + R 25]
+    J --> K[Score-Based Dynamic Panel Colors & Verbal Audio Suggestions Spoken Aloud]
+    K --> L{Voice Mode: Audio Evaluation Finished?}
+    L -- Yes (Voice) --> M[Auto-Advances to Question N+1 without Manual Clicks]
+    L -- Text Mode --> N[Candidate Clicks 'Next Question']
+    M --> O{Final Question Answered?}
+    N --> O
+    O -- Yes --> P[Overall Performance Report & Spoken Hiring Recommendation]
+    O -- No --> G
 ```
 
 ---
 
 ## 📊 Detailed Workflow Sequence Diagrams
 
-### 1. Resume Upload & Multi-Agent Analysis Workflow
+### 1. Resume Upload & Parallel Multi-Agent Pipeline
 
 ```mermaid
 sequenceDiagram
@@ -66,60 +72,75 @@ sequenceDiagram
     participant Page as Home UI (/)
     participant Orchestrator as Orchestrator Agent
     participant RAG as RAG Grounding Agent
+    participant MCP as MCP Tools (Web/Company)
     participant ResumeAgent as Resume Analyst Agent
     participant Critic as Quality Critic Agent
-    participant VectorStore as Memory Vector Store
 
     User->>Page: Upload PDF Resume + Paste Job Description
     Page->>Orchestrator: POST /api/agent (task: analyze_resume)
-    Orchestrator->>RAG: Ingest User Documents & Retrieve Grounding Context
-    RAG->>VectorStore: Ingest PDF Text & Query Skill Taxonomy / Bullet Rewrites
-    VectorStore-->>RAG: Return Top-K Grounding Matches
-    RAG-->>Orchestrator: Grounded RAG Context
-    Orchestrator->>ResumeAgent: Analyze Resume vs JD + RAG Context
-    ResumeAgent-->>Orchestrator: ATS Score, Matched/Missing Skills, Bullet Advice
-    Orchestrator->>Critic: Review Analysis Consistency & Actionability
+    Orchestrator->>Orchestrator: Stage 1: Document Ingestion & Skill Extraction
+    
+    par Parallel RAG & MCP Retrieval (Stage 2)
+        Orchestrator->>RAG: Retrieve Skill Taxonomy & Rewrites
+        Orchestrator->>MCP: Execute web_search & company_research
+    end
+
+    RAG-->>Orchestrator: Grounded Context Chunks
+    MCP-->>Orchestrator: Industry Standards & Company Info
+    Orchestrator->>ResumeAgent: Stage 3: Score ATS Fit & Bullet Impact
+    ResumeAgent-->>Orchestrator: ATS Score (0-100), Skill Gaps & Insights
+    Orchestrator->>Critic: Stage 4: Quality Review (within 12s budget)
     Critic-->>Orchestrator: Verified Quality Analysis
     Orchestrator-->>Page: Return AnalysisOutput + AgentTrace Timeline
-    Page-->>User: Display Score Gauge, Skills Badges, Insights & 'Start Voice Practice' CTA
+    Page->>Page: Save SessionData to localStorage & Render Active Banner
 ```
 
 ---
 
-### 2. Hands-Free Interactive Voice Interview Workflow
+### 2. 100% Hands-Free Voice Interview Flow
 
 ```mermaid
 sequenceDiagram
     autonumber
     actor Candidate
-    participant VoiceUI as Voice Lab (/voice-lab)
+    participant VoiceUI as Practice Hub (/practice)
     participant SpeechSTT as Web Speech Recognition (STT)
     participant SpeechTTS as Web Speech Synthesis (TTS)
-    participant VoiceAPI as Voice API (/api/voice)
-    participant Groq as Groq LLM (llama-3.1-8b-instant)
+    participant Agent as Interview Coach Agent
 
-    VoiceUI->>SpeechTTS: AI Reads Question 1 Aloud
-    SpeechTTS-->>Candidate: Audio output (TTS Question)
-    SpeechTTS-->>VoiceUI: Question Speech Finished
-    VoiceUI->>SpeechSTT: Auto-Turn ON Microphone (Listening Mode)
+    VoiceUI->>SpeechTTS: Read Question N Aloud
+    SpeechTTS-->>Candidate: Audio output (Question N)
+    SpeechTTS-->>VoiceUI: Question TTS Finished
+    VoiceUI->>SpeechSTT: Auto-Turn ON Microphone (Listening)
     Candidate->>SpeechSTT: Speaks Answer Aloud
-    SpeechSTT-->>VoiceUI: Real-Time Audio Transcript Streamed (en-IN / local locale)
-    
-    note over VoiceUI,SpeechSTT: 5-Second Silence Auto-Submit Timer
-    alt Candidate Pauses for 5 Seconds
-        SpeechSTT-->>VoiceUI: Silence Timeout Triggered
-        VoiceUI->>SpeechSTT: Auto-Stop Listening & Finalize Transcript
-    end
-
-    VoiceUI->>VoiceAPI: POST /api/voice (transcript, question)
-    VoiceAPI->>Groq: Stream prompt (llama-3.1-8b-instant)
-    Groq-->>VoiceAPI: Sub-300ms Token Stream (800+ tok/s)
-    VoiceAPI-->>VoiceUI: Chunked Response Stream
-    VoiceUI->>SpeechTTS: Stream Feedback Audio Sentences Aloud
-    SpeechTTS-->>Candidate: Audio output (Verbal STAR Feedback & Score)
-    SpeechTTS-->>VoiceUI: Feedback Audio Finished
-    VoiceUI->>VoiceUI: Auto-Increment to Question N (Auto-Loop Continues)
+    SpeechSTT-->>VoiceUI: Transcript Streamed & 5s Silence Detected
+    VoiceUI->>SpeechSTT: Auto-Stop Listening & Submit Transcript
+    VoiceUI->>Agent: Evaluate Answer with 100-Point STAR Matrix
+    Agent-->>VoiceUI: Score (0-100), Grade, STAR Breakdown (0-25 per component), Audio Suggestion
+    VoiceUI->>SpeechTTS: Speak Feedback & Audio Suggestion Aloud
+    SpeechTTS-->>Candidate: Audio output (Score, Feedback & Audio Suggestion)
+    SpeechTTS-->>VoiceUI: Feedback TTS Finished
+    VoiceUI->>VoiceUI: Auto-Advance to Question N+1 & Repeat Loop
 ```
+
+---
+
+## 💯 STAR 100-Point Grading System & Score Themes
+
+| Component | Max Points | Evaluation Criteria |
+|---|---|---|
+| **Situation (S)** | 25 pts | Background context, role clarity, and problem complexity |
+| **Task (T)** | 25 pts | Specific challenge definition, goals, and personal responsibility |
+| **Action (A)** | 25 pts | Technical depth, personal initiatives, tools used, and steps taken |
+| **Result (R)** | 25 pts | Quantified metrics, business impact, and key takeaways |
+| **Total Score** | **100 pts** | **Situation + Task + Action + Result** |
+
+### Dynamic Tier Color Themes
+- `90–100`: **Strong Hire (A+)** $\rightarrow$ Emerald Theme (`border-emerald-500`, `bg-emerald-500/10`)
+- `80–89`: **Hire (A)** $\rightarrow$ Cyan Theme (`border-cyan-500`, `bg-cyan-500/10`)
+- `70–79`: **Leaning Hire (B)** $\rightarrow$ Blue Theme (`border-blue-500`, `bg-blue-500/10`)
+- `60–69`: **Needs Work (C)** $\rightarrow$ Amber Theme (`border-amber-500`, `bg-amber-500/10`)
+- `< 60`: **No Hire (D)** $\rightarrow$ Red Theme (`border-red-500`, `bg-red-500/10`)
 
 ---
 
@@ -127,10 +148,11 @@ sequenceDiagram
 
 | Layer | Technology | Purpose |
 |---|---|---|
-| **Frontend & Backend** | Next.js 16 App Router, TypeScript | Core application framework & API routes |
-| **Styling & UI** | Tailwind CSS v4, Framer Motion, Lucide Icons | Dark mode glassmorphism UI with micro-animations |
-| **Agent Orchestration** | LangChain JS / Custom Supervisor Pattern | Agent routing, state management, and trace logging |
-| **LLM Inference Engine** | Groq API (`llama-3.3-70b-versatile` & `llama-3.1-8b-instant`) | Ultra-fast token generation (< 200ms latency) |
-| **Vector RAG Storage** | `MemoryVectorStore`, `LocalEmbeddings` (TF-IDF) | Self-contained vector database & retrieval |
-| **MCP Integration** | Custom `MCPClient` & Tool Registry | Standardized tool execution (`web_search`, `research_company`, `github_profile`) |
-| **Voice Processing** | Web Speech Recognition & Web Speech Synthesis API | Zero-dependency browser-native STT and TTS |
+| **Framework** | Next.js 16 App Router, TypeScript | Core application architecture & API routes |
+| **Styling & UI** | Tailwind CSS v4, Shadcn UI, Framer Motion | Theme-aware cards, dark mode, slide-down mobile menu |
+| **Theme Management** | `next-themes` | Persistent dark/light mode on `<html>` root |
+| **Session Persistence** | `localStorage` + `AppProviders` Context | Unified session across `/`, `/dashboard`, `/practice` |
+| **Multi-Agent System** | Groq API (`llama-3.3-70b-versatile` & `llama-3.1-8b-instant`) | Stage progress streaming & 8s/12s latency bounding |
+| **RAG Engine** | `MemoryVectorStore`, `LocalEmbeddings` (TF-IDF) | Inline `GroundingCitation` badges & Knowledge Explorer |
+| **MCP Integration** | `MCPClient` Tool Registry | Parallel execution of web search & company research |
+| **Voice Engine** | Web Speech API (STT & TTS) | Sub-300ms 100% hands-free voice loop & spoken audio suggestions |
