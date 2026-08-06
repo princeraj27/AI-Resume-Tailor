@@ -47,13 +47,13 @@ class LLMService {
     return JSON.parse(content) as T;
   }
   
-  async *streamText(prompt: string, systemPrompt?: string): AsyncGenerator<string> {
+  async *streamText(prompt: string, systemPrompt?: string, modelOverride?: string): AsyncGenerator<string> {
     if (!this.client) { 
       yield 'LLM unavailable'; 
       return; 
     }
     const stream = await this.client.chat.completions.create({
-      model: this.model,
+      model: modelOverride || this.model,
       messages: [
         { role: 'system', content: systemPrompt || 'You are a helpful AI career coach.' },
         { role: 'user', content: prompt },

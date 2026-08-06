@@ -17,7 +17,7 @@ Do NOT use markdown formatting - speak naturally as this will be read aloud.`;
   const stream = new ReadableStream({
     async start(controller) {
       try {
-        for await (const chunk of llmService.streamText(prompt, systemPrompt)) {
+        for await (const chunk of llmService.streamText(prompt, systemPrompt, 'llama-3.1-8b-instant')) {
           controller.enqueue(encoder.encode(chunk));
         }
         controller.close();

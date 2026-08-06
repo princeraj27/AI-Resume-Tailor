@@ -29,7 +29,8 @@ export class SpeechRecognitionService {
   start(options: SpeechRecognitionOptions): void {
     if (!this.recognition) return;
 
-    this.recognition.lang = options.language || 'en-US';
+    const defaultLang = typeof navigator !== 'undefined' && navigator.language ? navigator.language : 'en-IN';
+    this.recognition.lang = options.language || defaultLang;
     this.recognition.continuous = options.continuous ?? false;
     this.recognition.interimResults = options.interimResults ?? false;
 
