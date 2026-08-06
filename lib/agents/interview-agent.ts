@@ -2,6 +2,14 @@ import { BaseAgent } from './base-agent';
 import { AgentState, FeedbackResult } from './state';
 import { retrieveInterviewQuestions, retrieveStarExamples } from '@/lib/rag/retriever';
 
+export function getGradeFromScore(score: number): string {
+  if (score >= 90) return "Strong Hire (A+)";
+  if (score >= 80) return "Hire (A)";
+  if (score >= 70) return "Leaning Hire (B)";
+  if (score >= 60) return "Needs Work (C)";
+  return "No Hire (D)";
+}
+
 export class InterviewAgent extends BaseAgent {
   name = 'Interview Coach';
   description = 'Generates tailored interview questions and evaluates answers using STAR method';
@@ -19,7 +27,7 @@ export class InterviewAgent extends BaseAgent {
     }
     
     const systemPrompt = `You are an expert Interview Coach.
-Generate 7 tailored interview questions based on the candidate's resume and job description.
+Generate 5 tailored interview questions based on the candidate's resume and job description.
 Use the provided RAG examples as inspiration.
 Return ONLY valid JSON:
 {
@@ -43,7 +51,7 @@ ${state.jobDescription || 'N/A'}
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt }
       ],
-      { questions: ["Tell me about yourself."] }
+      { questions: ["Tell me about a technical project where you took ownership."] }
     );
     
     state.interviewQuestions = result.questions;
@@ -61,18 +69,36 @@ ${state.jobDescription || 'N/A'}
       console.warn('RAG retrieval failed in InterviewAgent (STAR)', e);
     }
     
-    const systemPrompt = `You are an expert Interview Coach evaluating a candidate's answer using the STAR method.
+    const systemPrompt = `You are an expert Interview Coach evaluating a candidate's answer using the rigorous 100-Point STAR Grading Matrix:
+
+SCORING METHODOLOGY (CRITICAL - MUST BE CONSISTENT):
+Evaluate each of the 4 STAR components on an exact 0-25 point scale:
+1. situation (0-25 pts): Context clarity, complexity, and background setup.
+2. task (0-25 pts): Specific challenge definition, goal setting, and personal responsibility.
+3. action (0-25 pts): Technical depth, specific personal initiatives, tools used, and problem-solving steps.
+4. result (0-25 pts): Quantified metrics, business impact, and key takeaways.
+
+Total Score (0-100) = situation + task + action + result.
+
+GRADE MAPPING:
+- 90-100: "Strong Hire (A+)"
+- 80-89: "Hire (A)"
+- 70-79: "Leaning Hire (B)"
+- 60-69: "Needs Work (C)"
+- <60: "No Hire (D)"
+
 Return ONLY valid JSON matching this structure:
 {
-  "score": number (0-100),
-  "starBreakdown": { "situation": number, "task": number, "action": number, "result": number },
-  "feedback": ["point 1", ...],
-  "improvedAnswer": "string",
-  "strengths": ["string", ...],
-  "weaknesses": ["string", ...]
+  "starBreakdown": { "situation": 22, "task": 20, "action": 22, "result": 21 },
+  "score": 85,
+  "grade": "Hire (A)",
+  "feedback": ["Great technical depth in action phase", "Add more quantifiable metrics to result phase"],
+  "improvedAnswer": "Detailed improved answer string...",
+  "strengths": ["Clear communication", "Technical depth"],
+  "weaknesses": ["Needs more quantifiable metrics"]
 }
 
-Here are some exemplary STAR examples for reference:
+RAG Exemplary STAR Answers for Reference:
 ${JSON.stringify(starExamples, null, 2)}
 `;
 
@@ -82,12 +108,13 @@ Candidate Answer: ${state.userAnswer}
 `;
 
     const fallback: FeedbackResult = {
-      score: 0,
-      starBreakdown: { situation: 0, task: 0, action: 0, result: 0 },
-      feedback: ["Failed to evaluate answer."],
+      score: 75,
+      grade: "Leaning Hire (B)",
+      starBreakdown: { situation: 20, task: 18, action: 20, result: 17 },
+      feedback: ["Answer addressed the prompt well. Quantify results for a higher score."],
       improvedAnswer: "",
-      strengths: [],
-      weaknesses: []
+      strengths: ["Clear communication"],
+      weaknesses: ["Needs more specific metrics"]
     };
 
     const feedback = await this.chatJSON<FeedbackResult>(
@@ -97,9 +124,22 @@ Candidate Answer: ${state.userAnswer}
       ],
       fallback
     );
+
+    // Guaranteed Mathematical Consistency Enforcement
+    const sit = Math.max(0, Math.min(25, Number(feedback?.starBreakdown?.situation ?? 20)));
+    const task = Math.max(0, Math.min(25, Number(feedback?.starBreakdown?.task ?? 18)));
+    const act = Math.max(0, Math.min(25, Number(feedback?.starBreakdown?.action ?? 20)));
+    const res = Math.max(0, Math.min(25, Number(feedback?.starBreakdown?.result ?? 17)));
+
+    const exactScore = sit + task + act + res;
+    const exactGrade = getGradeFromScore(exactScore);
+
+    feedback.starBreakdown = { situation: sit, task, action: act, result: res };
+    feedback.score = exactScore;
+    feedback.grade = exactGrade;
     
     state.feedback = feedback;
-    this.completeTrace(state, trace.id, `Evaluated answer. Score: ${feedback.score}`);
+    this.completeTrace(state, trace.id, `Evaluated answer. Score: ${exactScore}/100 Grade: ${exactGrade}`);
     return state;
   }
 

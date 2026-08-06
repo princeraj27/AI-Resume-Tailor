@@ -1,44 +1,60 @@
 'use client';
 
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { ThemeProvider } from 'next-themes';
 import { Toaster } from 'sonner';
-
-interface SessionState {
-  sessionId: string;
-  resumeText: string;
-  jobDescription: string;
-}
+import { 
+  SessionData, 
+  createEmptySession, 
+  loadSessionFromStorage, 
+  saveSessionToStorage, 
+  clearSessionFromStorage 
+} from '@/lib/session';
 
 interface AppContextType {
-  session: SessionState;
-  updateSession: (updates: Partial<SessionState>) => void;
+  session: SessionData;
+  updateSession: (updates: Partial<SessionData>) => void;
   resetSession: () => void;
+  hasActiveSession: boolean;
 }
-
-const defaultSession: SessionState = {
-  sessionId: '',
-  resumeText: '',
-  jobDescription: '',
-};
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProviders({ children }: { children: ReactNode }) {
-  const [session, setSession] = useState<SessionState>(defaultSession);
+  const [session, setSession] = useState<SessionData>(createEmptySession);
+  const [isLoaded, setIsLoaded] = useState(false);
 
-  const updateSession = (updates: Partial<SessionState>) => {
-    setSession((prev) => ({ ...prev, ...updates }));
+  // Load from localStorage on mount
+  useEffect(() => {
+    const loaded = loadSessionFromStorage();
+    setSession(loaded);
+    setIsLoaded(true);
+  }, []);
+
+  // Save to localStorage on change
+  const updateSession = (updates: Partial<SessionData>) => {
+    setSession((prev) => {
+      const next = { ...prev, ...updates, updatedAt: Date.now() };
+      saveSessionToStorage(next);
+      return next;
+    });
   };
 
   const resetSession = () => {
-    setSession(defaultSession);
+    clearSessionFromStorage();
+    const fresh = createEmptySession();
+    setSession(fresh);
   };
 
+  const hasActiveSession = Boolean(session.analysisResult || session.resumeText);
+
   return (
-    <AppContext.Provider value={{ session, updateSession, resetSession }}>
-      {children}
-      <Toaster theme="dark" position="top-right" />
-    </AppContext.Provider>
+    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+      <AppContext.Provider value={{ session, updateSession, resetSession, hasActiveSession }}>
+        {children}
+        <Toaster position="top-right" />
+      </AppContext.Provider>
+    </ThemeProvider>
   );
 }
 

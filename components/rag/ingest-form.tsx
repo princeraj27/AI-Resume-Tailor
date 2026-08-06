@@ -6,7 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
+import { ragIngest } from '@/lib/api';
 
 export function IngestForm() {
   const [content, setContent] = useState('');
@@ -17,92 +19,95 @@ export function IngestForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!content.trim() || !sourceName.trim()) {
-      toast.error('Please provide both content and a source name.');
+      toast.error('Please provide both content and a document title.');
       return;
     }
 
     setIsSubmitting(true);
-    // Simulate API call for vector embedding
-    setTimeout(() => {
-      toast.success(`Successfully embedded ${sourceName} into knowledge base.`);
+    try {
+      await ragIngest(content, { source: sourceName, category });
+      toast.success(`Successfully embedded "${sourceName}" into vector store.`);
       setContent('');
       setSourceName('');
+    } catch (err) {
+      toast.error('Failed to ingest document.');
+    } finally {
       setIsSubmitting(false);
-    }, 1500);
+    }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-black/20 border border-white/10 rounded-xl p-6 backdrop-blur-md space-y-6">
-      <div className="flex items-center gap-2 mb-2">
-        <Upload className="w-5 h-5 text-emerald-400" />
-        <h2 className="text-lg font-medium text-white/90">Add to Knowledge Base</h2>
+    <Card className="p-5 space-y-5 border border-border bg-card text-card-foreground">
+      <div className="flex items-center gap-2 pb-2 border-b border-border">
+        <Upload className="w-5 h-5 text-emerald-500" />
+        <h3 className="font-bold text-base">Ingest Custom Knowledge</h3>
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-2">
         {[
           { id: 'Resume', icon: FileText },
           { id: 'Job Description', icon: Briefcase },
           { id: 'Custom', icon: BookOpen }
         ].map((type) => {
           const Icon = type.icon;
+          const isSelected = category === type.id;
           return (
-            <div
+            <button
               key={type.id}
+              type="button"
               onClick={() => setCategory(type.id as any)}
-              className={`p-3 rounded-lg border cursor-pointer flex flex-col items-center gap-2 transition-all ${
-                category === type.id
-                  ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400'
-                  : 'bg-white/5 border-white/10 text-zinc-400 hover:bg-white/10'
+              className={`p-2.5 rounded-lg border text-xs font-semibold flex flex-col items-center gap-1.5 transition-colors ${
+                isSelected
+                  ? 'bg-emerald-500/10 border-emerald-500 text-emerald-500'
+                  : 'bg-card border-border hover:bg-muted text-muted-foreground'
               }`}
             >
-              <Icon className="w-5 h-5" />
-              <span className="text-xs font-medium">{type.id}</span>
-            </div>
+              <Icon className="w-4 h-4" />
+              <span>{type.id}</span>
+            </button>
           );
         })}
       </div>
 
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="sourceName" className="text-zinc-300">Document Title</Label>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-1.5">
+          <Label htmlFor="sourceName" className="text-xs">Document Title</Label>
           <Input 
             id="sourceName"
             value={sourceName}
             onChange={(e) => setSourceName(e.target.value)}
-            placeholder="e.g. Senior Frontend Resume 2024"
-            className="bg-black/40 border-white/10 focus-visible:ring-emerald-500/50"
+            placeholder="e.g. Senior Technical Lead Resume 2025"
+            className="text-sm"
           />
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="content" className="text-zinc-300">Content</Label>
+        <div className="space-y-1.5">
+          <Label htmlFor="content" className="text-xs">Content Text</Label>
           <Textarea 
             id="content"
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            placeholder="Paste text content here to generate embeddings..."
-            className="min-h-[150px] bg-black/40 border-white/10 focus-visible:ring-emerald-500/50 resize-y"
+            placeholder="Paste text content here to generate vector embeddings..."
+            className="min-h-[140px] text-sm resize-y"
           />
         </div>
-      </div>
 
-      <Button 
-        type="submit" 
-        className="w-full bg-emerald-600 hover:bg-emerald-500 text-white"
-        disabled={isSubmitting || !content || !sourceName}
-      >
-        {isSubmitting ? (
-          <>
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            Generating Embeddings...
-          </>
-        ) : (
-          <>
-            <Upload className="w-4 h-4 mr-2" />
-            Ingest to Vector Store
-          </>
-        )}
-      </Button>
-    </form>
+        <Button 
+          type="submit" 
+          className="w-full gap-2"
+          disabled={isSubmitting || !content.trim() || !sourceName.trim()}
+        >
+          {isSubmitting ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" /> Ingesting to RAG Vector Store...
+            </>
+          ) : (
+            <>
+              <Upload className="w-4 h-4" /> Add to RAG Vector Store
+            </>
+          )}
+        </Button>
+      </form>
+    </Card>
   );
 }

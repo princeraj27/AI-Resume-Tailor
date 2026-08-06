@@ -48,6 +48,7 @@ export interface MCPToolCallEntry {
 
 export interface FeedbackResult {
   score: number;
+  grade?: string;
   starBreakdown: { situation: number; task: number; action: number; result: number };
   feedback: string[];
   improvedAnswer: string;

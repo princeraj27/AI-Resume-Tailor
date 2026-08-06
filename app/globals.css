@@ -1,7 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
+@custom-variant dark (&:where(.dark, .dark *));
 
 @theme inline {
   --color-background: var(--background);
@@ -115,7 +115,7 @@
 }
 
 .glass {
-  @apply backdrop-blur-md bg-white/5 border border-white/10 shadow-[0_4px_30px_rgba(0,0,0,0.1)];
+  @apply bg-card text-card-foreground border border-border rounded-xl shadow-xs;
 }
 
 .gradient-text {

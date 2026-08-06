@@ -38,6 +38,7 @@ export async function POST(request: NextRequest) {
     
     // Return the full state including agent trace
     return NextResponse.json({
+      resumeText: result.resumeText,
       analysisResult: result.analysisResult,
       interviewQuestions: result.interviewQuestions,
       feedback: result.feedback,

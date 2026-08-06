@@ -1,52 +1,65 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
+import { useTheme } from 'next-themes';
+import { useAppContext } from '@/components/layout/providers';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { PlusCircle, Moon, Sun } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export function Header() {
   const pathname = usePathname();
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const { theme, setTheme, resolvedTheme } = useTheme();
+  const { hasActiveSession, resetSession } = useAppContext();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const getPageTitle = () => {
     switch (pathname) {
       case '/dashboard': return 'Dashboard';
-      case '/interview': return 'Interview Coach';
-      case '/voice':
-      case '/voice-lab': return 'Voice Lab';
-      case '/knowledge':
-      case '/knowledge-base': return 'Knowledge Base';
+      case '/practice': return 'Practice Hub';
       default: return 'AI Career Intelligence';
     }
   };
 
+  const isDark = mounted && (resolvedTheme === 'dark' || theme === 'dark');
+
   return (
-    <header className="h-16 flex items-center justify-between px-6 border-b border-white/10 bg-black/20 backdrop-blur-xl relative z-10">
-      <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/20 to-transparent" />
-      
+    <header className="h-16 flex items-center justify-between px-6 border-b border-border bg-card text-card-foreground relative z-10">
       <div className="flex items-center">
-        <h1 className="text-xl font-medium tracking-tight text-white/90">
+        <h1 className="text-xl font-bold tracking-tight">
           {getPageTitle()}
         </h1>
       </div>
 
-      <div className="flex items-center gap-4">
-        <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/5 text-xs text-zinc-400">
-          <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          Session Active
-        </div>
+      <div className="flex items-center gap-3">
+        {hasActiveSession && (
+          <Badge variant="outline" className="hidden sm:flex items-center gap-2 px-3 py-1 bg-emerald-500/10 text-emerald-500 border-emerald-500/20">
+            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            Session Active
+          </Badge>
+        )}
 
         <Button 
           variant="ghost" 
           size="icon" 
-          className="rounded-full hover:bg-white/10 text-zinc-400"
-          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          className="rounded-full"
+          onClick={() => setTheme(isDark ? 'light' : 'dark')}
+          title="Toggle Dark/Light Mode"
         >
-          {theme === 'dark' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+          {isDark ? <Sun className="w-4 h-4 text-yellow-400" /> : <Moon className="w-4 h-4 text-slate-700" />}
         </Button>
 
-        <Button className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white border-0 shadow-[0_0_15px_rgba(6,182,212,0.3)] gap-2">
+        <Button 
+          variant="outline"
+          size="sm"
+          onClick={resetSession}
+          className="gap-2"
+        >
           <PlusCircle className="w-4 h-4" />
           New Session
         </Button>

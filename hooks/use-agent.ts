@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { AgentState, AgentTraceEntry, AnalysisOutput, FeedbackResult, RAGContextItem } from '@/lib/agents/state';
+import { AgentTraceEntry, AnalysisOutput, FeedbackResult, RAGContextItem } from '@/lib/agents/state';
 import { agentAnalyze, agentGenerateQuestions, agentEvaluateAnswer } from '@/lib/api';
+import { useAppContext } from '@/components/layout/providers';
 
 export interface UseAgentReturn {
   isLoading: boolean;
@@ -20,76 +21,90 @@ export interface UseAgentReturn {
 }
 
 export function useAgent(): UseAgentReturn {
+  const { session, updateSession } = useAppContext();
+
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [analysisResult, setAnalysisResult] = useState<AnalysisOutput | null>(null);
-  const [interviewQuestions, setInterviewQuestions] = useState<string[]>([]);
   const [feedback, setFeedback] = useState<FeedbackResult | null>(null);
-  const [agentTrace, setAgentTrace] = useState<AgentTraceEntry[]>([]);
-  const [ragContext, setRagContext] = useState<RAGContextItem[]>([]);
 
   const analyzeResume = useCallback(async (file: File, jobDescription?: string) => {
     setIsLoading(true);
     setError(null);
     try {
       const res = await agentAnalyze(file, jobDescription);
-      if (res.analysisResult) setAnalysisResult(res.analysisResult);
-      if (res.agentTrace) setAgentTrace(res.agentTrace);
-      if (res.ragContext) setRagContext(res.ragContext);
+      updateSession({
+        resumeText: res.resumeText || session.resumeText,
+        jobDescription: jobDescription || session.jobDescription,
+        analysisResult: res.analysisResult || null,
+        agentTrace: res.agentTrace || [],
+        ragContext: res.ragContext || [],
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to analyze resume');
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [session.jobDescription, updateSession]);
 
   const generateQuestions = useCallback(async (resumeText: string, jobDescription?: string) => {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await agentGenerateQuestions(resumeText, jobDescription);
-      if (res.interviewQuestions) setInterviewQuestions(res.interviewQuestions);
-      if (res.agentTrace) setAgentTrace(prev => [...prev, ...res.agentTrace]);
-      if (res.ragContext) setRagContext(res.ragContext);
+      const res = await agentGenerateQuestions(resumeText || session.resumeText, jobDescription || session.jobDescription);
+      const newQuestions = res.interviewQuestions || [];
+      const newItems = newQuestions.map((q: string, idx: number) => ({
+        id: `q-${idx}`,
+        question: q,
+        answer: '',
+        feedback: null,
+        isEvaluated: false,
+      }));
+
+      updateSession({
+        interviewQuestions: newQuestions,
+        practiceItems: newItems,
+        agentTrace: [...session.agentTrace, ...(res.agentTrace || [])],
+        ragContext: res.ragContext || session.ragContext,
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to generate questions');
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [session.resumeText, session.jobDescription, session.agentTrace, session.ragContext, updateSession]);
 
   const evaluateAnswer = useCallback(async (question: string, answer: string) => {
     setIsLoading(true);
     setError(null);
     try {
       const res = await agentEvaluateAnswer(question, answer);
-      if (res.feedback) setFeedback(res.feedback);
-      if (res.agentTrace) setAgentTrace(prev => [...prev, ...res.agentTrace]);
-      if (res.ragContext) setRagContext(res.ragContext);
+      if (res.feedback) {
+        setFeedback(res.feedback);
+      }
+      updateSession({
+        agentTrace: [...session.agentTrace, ...(res.agentTrace || [])],
+        ragContext: res.ragContext || session.ragContext,
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to evaluate answer');
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [session.agentTrace, session.ragContext, updateSession]);
 
   const reset = useCallback(() => {
     setError(null);
-    setAnalysisResult(null);
-    setInterviewQuestions([]);
     setFeedback(null);
-    setAgentTrace([]);
-    setRagContext([]);
   }, []);
 
   return {
     isLoading,
     error,
-    analysisResult,
-    interviewQuestions,
+    analysisResult: session.analysisResult,
+    interviewQuestions: session.interviewQuestions,
     feedback,
-    agentTrace,
-    ragContext,
+    agentTrace: session.agentTrace,
+    ragContext: session.ragContext,
     analyzeResume,
     generateQuestions,
     evaluateAnswer,

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronUp, FileText, Briefcase, BookOpen, Brain } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { RAGContextItem } from './knowledge-panel';
+import { RAGContextItem } from '@/lib/agents/state';
 
 interface SourceCardProps {
   item: RAGContextItem;

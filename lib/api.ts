@@ -31,6 +31,7 @@ export interface FeedbackResponse {
 }
 
 export interface AgentResponse {
+  resumeText?: string;
   analysisResult?: AnalysisOutput;
   interviewQuestions?: string[];
   feedback?: FeedbackResult;

@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
 import { UploadArea } from "@/components/upload-area";
 import { AgentTrace } from "@/components/agents/agent-trace";
-import { SourceCard } from "@/components/rag/source-cards";
+import { GroundingCitation } from "@/components/rag/grounding-citation";
 import { useAgent } from "@/hooks/use-agent";
-import { BrainCircuit, Mic, Database, Bot } from "lucide-react";
+import { useAppContext } from "@/components/layout/providers";
+import { BrainCircuit, Mic, Database, Bot, ArrowRight, Play, CheckCircle2, RotateCcw } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,180 +14,184 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 
 export default function Home() {
+  const { session, updateSession, hasActiveSession, resetSession } = useAppContext();
   const { analyzeResume, isLoading, analysisResult, agentTrace, ragContext } = useAgent();
 
   const handleAnalyze = async (file: File, jd: string) => {
     await analyzeResume(file, jd);
   };
 
+  const currentResult = analysisResult || session.analysisResult;
+  const currentTrace = (agentTrace && agentTrace.length > 0) ? agentTrace : session.agentTrace;
+
   const features = [
     {
-      icon: <Bot className="w-8 h-8 text-blue-400" />,
-      title: "Multi-Agent Analysis",
-      description: "Specialized agents for research, review, and orchestration.",
+      icon: <Bot className="w-6 h-6 text-primary" />,
+      title: "Multi-Agent System",
+      description: "Specialized Groq-powered agents for research, scoring, and review.",
     },
     {
-      icon: <Database className="w-8 h-8 text-green-400" />,
+      icon: <Database className="w-6 h-6 text-emerald-500" />,
       title: "RAG Grounding",
-      description: "Context-aware feedback powered by extensive knowledge base.",
+      description: "Inline citations grounded in our domain knowledge base.",
     },
     {
-      icon: <BrainCircuit className="w-8 h-8 text-purple-400" />,
-      title: "MCP Integration",
-      description: "Advanced semantic routing and query planning.",
+      icon: <BrainCircuit className="w-6 h-6 text-cyan-500" />,
+      title: "MCP Tools",
+      description: "Parallel company research & web search execution.",
     },
     {
-      icon: <Mic className="w-8 h-8 text-orange-400" />,
-      title: "Voice Interviews",
-      description: "Real-time mock interviews with voice recognition.",
+      icon: <Mic className="w-6 h-6 text-orange-500" />,
+      title: "Interactive Practice",
+      description: "Text & Voice practice with 5-second silence auto-submit.",
     },
   ];
 
   return (
-    <div className="max-w-6xl mx-auto space-y-12 pb-24">
-      {/* Hero Section */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-center space-y-4 pt-12"
-      >
-        <h1 className="text-5xl md:text-6xl font-bold tracking-tight">
-          <span className="gradient-text">AI Career Intelligence Platform</span>
+    <div className="max-w-6xl mx-auto space-y-8 pb-16">
+      {/* Hero Header */}
+      <div className="text-center space-y-3 pt-6">
+        <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">
+          AI Career Intelligence Platform
         </h1>
-        <p className="text-xl text-muted-foreground">
-          Multi-Agent • RAG-Powered • Voice-Enabled
+        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          Multi-Agent Resume Optimization, Inline RAG Citations, and Hands-Free Voice Practice.
         </p>
-      </motion.div>
+      </div>
+
+      {/* ACTIVE SESSION RESUME BANNER (Section 4 Requirement) */}
+      {hasActiveSession && (
+        <Card className="border-primary/40 bg-primary/5 p-6">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Badge className="bg-emerald-500 text-white font-bold">Active Session Found</Badge>
+                {currentResult && <span className="text-sm font-semibold">ATS Score: {currentResult.score}%</span>}
+              </div>
+              <p className="text-sm text-muted-foreground">
+                You have an in-progress session with analyzed resume data. Pick up right where you left off.
+              </p>
+            </div>
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              <Link href="/dashboard" className="flex-1 sm:flex-none">
+                <Button variant="default" className="w-full gap-2">
+                  Resume Dashboard <ArrowRight className="w-4 h-4" />
+                </Button>
+              </Link>
+              <Link href="/practice" className="flex-1 sm:flex-none">
+                <Button variant="outline" className="w-full gap-2">
+                  <Mic className="w-4 h-4 text-orange-500" /> Practice Hub
+                </Button>
+              </Link>
+              <Button variant="ghost" size="icon" onClick={resetSession} title="Start New Session">
+                <RotateCcw className="w-4 h-4 text-muted-foreground" />
+              </Button>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* Upload Component */}
+      <UploadArea onAnalyze={handleAnalyze} isAnalyzing={isLoading} />
 
       {/* Features Grid */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.2 }}
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
-      >
-        {features.map((feature, idx) => (
-          <Card key={idx} className="glass hover:bg-white/10 transition-colors cursor-default">
-            <CardHeader>
-              <div className="mb-2">{feature.icon}</div>
-              <CardTitle>{feature.title}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <CardDescription className="text-gray-400">{feature.description}</CardDescription>
-            </CardContent>
-          </Card>
-        ))}
-      </motion.div>
+      {!currentResult && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-4">
+          {features.map((feature, index) => (
+            <Card key={index} className="p-5 space-y-2">
+              <div>{feature.icon}</div>
+              <h3 className="font-bold text-base">{feature.title}</h3>
+              <p className="text-xs text-muted-foreground leading-relaxed">{feature.description}</p>
+            </Card>
+          ))}
+        </div>
+      )}
 
-      {/* Main Action Area */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.4 }}
-        className="glass rounded-xl p-8"
-      >
-        <h2 className="text-2xl font-semibold mb-6 text-center">Analyze Your Resume</h2>
-        <UploadArea onAnalyze={handleAnalyze} isAnalyzing={isLoading} />
-      </motion.div>
-
-      {/* Results Area */}
-      {analysisResult && (
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="space-y-8"
-        >
+      {/* Analysis Results Display */}
+      {currentResult && (
+        <div className="space-y-6 pt-4">
+          {/* Main Primary Metric Row (Section 3 Requirement: Clear Hierarchy) */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className="glass flex flex-col items-center justify-center p-6 md:col-span-1">
-              <h3 className="text-lg font-medium text-muted-foreground mb-4">ATS Score</h3>
-              <div className="relative w-32 h-32 flex items-center justify-center rounded-full border-8 border-blue-500/20">
-                <span className="text-4xl font-bold text-blue-400">{analysisResult.score}%</span>
-              </div>
+            <Card className="p-6 text-center flex flex-col items-center justify-center space-y-2 md:col-span-1">
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">ATS Compatibility Score</span>
+              <div className="text-5xl font-extrabold text-primary">{currentResult.score}%</div>
+              <Progress value={currentResult.score} className="w-full h-2 mt-2" />
             </Card>
 
-            <Card className="glass p-6 md:col-span-2 space-y-4">
-              <h3 className="text-lg font-medium">Skills Match</h3>
-              <div className="space-y-4">
-                <div>
-                  <div className="flex justify-between mb-2">
-                    <span className="text-sm text-green-400">Matched Skills</span>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {analysisResult.matchingSkills?.map((skill, i) => (
-                      <Badge key={i} variant="outline" className="border-green-500/30 text-green-400 bg-green-500/10">
-                        {skill}
-                      </Badge>
-                    ))}
-                  </div>
+            <Card className="p-6 space-y-4 md:col-span-2">
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-500 mb-2">Matching Skills</h4>
+                <div className="flex flex-wrap gap-1.5">
+                  {currentResult.matchingSkills?.map((skill, i) => (
+                    <Badge key={i} variant="secondary" className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20">
+                      {skill}
+                    </Badge>
+                  ))}
                 </div>
-                <div>
-                  <div className="flex justify-between mb-2">
-                    <span className="text-sm text-red-400">Missing Skills</span>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {analysisResult.missingSkills?.map((skill, i) => (
-                      <Badge key={i} variant="outline" className="border-red-500/30 text-red-400 bg-red-500/10">
-                        {skill}
-                      </Badge>
-                    ))}
-                  </div>
+              </div>
+
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-destructive mb-2">Missing Skills</h4>
+                <div className="flex flex-wrap gap-1.5">
+                  {currentResult.missingSkills?.map((skill, i) => (
+                    <Badge key={i} variant="outline" className="border-destructive/30 text-destructive">
+                      {skill}
+                    </Badge>
+                  ))}
                 </div>
               </div>
             </Card>
           </div>
 
+          {/* Key Insights & Inline RAG Grounding */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
-              <Card className="glass p-6">
-                <h3 className="text-xl font-semibold mb-4">Key Insights</h3>
+              <Card className="p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-bold">Key Optimization Insights</h3>
+                  <Link href="/practice">
+                    <Button size="sm" className="gap-2">
+                      <Mic className="w-4 h-4" /> Start Practice <ArrowRight className="w-4 h-4" />
+                    </Button>
+                  </Link>
+                </div>
                 <ul className="space-y-3">
-                  {analysisResult.insights?.map((insight, idx) => (
-                    <li key={idx} className="flex gap-3">
-                      <span className="text-blue-400 mt-1">•</span>
-                      <span className="text-gray-300">{insight}</span>
+                  {currentResult.insights?.map((insight, idx) => (
+                    <li key={idx} className="space-y-1 text-sm border-b pb-3 last:border-none last:pb-0">
+                      <p className="font-medium text-foreground">{insight}</p>
+                      {/* Inline RAG Citation */}
+                      {ragContext && ragContext[idx] && (
+                        <GroundingCitation item={ragContext[idx]} />
+                      )}
                     </li>
                   ))}
                 </ul>
               </Card>
 
-              <Card className="glass p-6 bg-gradient-to-r from-blue-950/40 via-cyan-950/40 to-transparent border-cyan-500/30">
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                  <div>
-                    <h4 className="text-lg font-bold text-white flex items-center gap-2">
-                      <Mic className="w-5 h-5 text-cyan-400" /> Ready to Practice Your Answers?
-                    </h4>
-                    <p className="text-sm text-zinc-400 mt-1">
-                      Start an interactive hands-free voice mock interview tailored to your resume.
-                    </p>
-                  </div>
-                  <Link href="/voice-lab?autoStart=true">
-                    <Button size="lg" className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-semibold shadow-[0_0_20px_rgba(6,182,212,0.4)] whitespace-nowrap">
-                      <Mic className="w-4 h-4 mr-2" /> Start Voice Practice
-                    </Button>
-                  </Link>
-                </div>
-              </Card>
-
-              {agentTrace && agentTrace.length > 0 && (
-                <div className="glass p-6 rounded-xl">
-                  <h3 className="text-xl font-semibold mb-4">Agent Trace</h3>
-                  <AgentTrace traces={agentTrace} />
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-6">
-              <h3 className="text-xl font-semibold">RAG Knowledge Used</h3>
-              {ragContext && ragContext.length > 0 ? (
-                <div className="space-y-3">{ragContext.map((item, i) => <SourceCard key={i} item={item} />)}</div>
-              ) : (
-                <Card className="glass p-6">
-                  <p className="text-muted-foreground text-sm">No specific knowledge sources used for this analysis.</p>
+              {currentTrace && currentTrace.length > 0 && (
+                <Card className="p-6 space-y-3">
+                  <h3 className="text-base font-bold">Multi-Agent Pipeline Trace</h3>
+                  <AgentTrace traces={currentTrace} />
                 </Card>
               )}
             </div>
+
+            {/* Quick Practice Hub Nav Card */}
+            <Card className="p-6 space-y-4 h-fit">
+              <h3 className="text-base font-bold flex items-center gap-2">
+                <Mic className="w-5 h-5 text-orange-500" /> Next Step: Interview Practice
+              </h3>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Take your analysis into our single Practice Hub. Practice questions in Text or Hands-Free Voice mode with instant STAR scoring.
+              </p>
+              <Link href="/practice" className="block">
+                <Button className="w-full gap-2">
+                  Go to Practice Hub <ArrowRight className="w-4 h-4" />
+                </Button>
+              </Link>
+            </Card>
           </div>
-        </motion.div>
+        </div>
       )}
     </div>
   );
