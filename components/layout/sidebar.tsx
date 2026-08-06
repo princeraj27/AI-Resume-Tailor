@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 const navItems = [
-  { href: '/', label: 'Upload & Home', icon: Brain },
+  { href: '/', label: 'Home', icon: Brain },
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/practice', label: 'Practice Hub', icon: MessageSquare },
 ];
