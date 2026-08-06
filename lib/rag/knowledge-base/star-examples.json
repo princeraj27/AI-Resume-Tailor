@@ -1,0 +1,28 @@
+[
+  {
+    "id": "star-1",
+    "question": "Tell me about a time you resolved a conflict.",
+    "category": "conflict-resolution",
+    "answer": {
+      "situation": "Two senior engineers on my team disagreed on the database architecture for a new microservice. One wanted NoSQL for flexibility, the other SQL for ACID compliance.",
+      "task": "As tech lead, I needed to resolve the conflict and make a decision to keep the project on track for our upcoming deadline.",
+      "action": "I organized a structured technical review where each engineer presented their approach based on specific criteria: scale, schema flexibility, and transaction needs. We mapped out our actual data access patterns.",
+      "result": "We realized our core financial transactions needed SQL, but our high-volume logging needed NoSQL. We adopted a hybrid approach that satisfied both needs and reduced query latency by 35% compared to our old monolith."
+    },
+    "score": 92,
+    "scoringNotes": "Strong specifics, measurable outcome, shows leadership and compromise."
+  },
+  {
+    "id": "star-2",
+    "question": "Describe a time when you had to learn a new technology quickly.",
+    "category": "adaptability",
+    "answer": {
+      "situation": "Our company acquired a startup whose entire stack was built on Go, a language no one on my team knew.",
+      "task": "We had 3 weeks to integrate their authentication service into our main application before a major marketing launch.",
+      "action": "I created a rapid learning plan. I spent the first weekend reading Go documentation, built a small proof-of-concept app, and then held daily 30-minute knowledge-sharing sessions with my team. We pair-programmed on the integration.",
+      "result": "We successfully integrated the service 2 days ahead of schedule, and my team is now comfortable maintaining the Go codebase."
+    },
+    "score": 88,
+    "scoringNotes": "Demonstrates proactive learning, team enablement, and clear success metrics."
+  }
+]

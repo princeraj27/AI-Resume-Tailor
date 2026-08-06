@@ -1,0 +1,33 @@
+{
+  "frontend": {
+    "frameworks": ["React", "Next.js", "Vue", "Angular", "Svelte", "Ember", "Nuxt"],
+    "languages": ["JavaScript", "TypeScript", "HTML", "CSS", "Sass", "Less"],
+    "tools": ["Webpack", "Vite", "ESLint", "Prettier", "Babel", "Jest", "Cypress", "Playwright"],
+    "concepts": ["Responsive Design", "Accessibility (a11y)", "SEO", "SSR", "SSG", "State Management", "Micro-frontends"]
+  },
+  "backend": {
+    "languages": ["Node.js", "Python", "Java", "Go", "Rust", "C#", "Ruby", "PHP"],
+    "frameworks": ["Express", "NestJS", "Django", "Flask", "Spring Boot", "ASP.NET", "Ruby on Rails", "FastAPI"],
+    "architecture": ["Microservices", "Monolith", "Serverless", "Event-Driven", "REST", "GraphQL", "gRPC"]
+  },
+  "databases": {
+    "sql": ["PostgreSQL", "MySQL", "SQL Server", "Oracle", "SQLite"],
+    "nosql": ["MongoDB", "Redis", "Cassandra", "DynamoDB", "CouchDB", "Neo4j"],
+    "concepts": ["ACID", "Sharding", "Replication", "Indexing", "Normalization"]
+  },
+  "devops": {
+    "cloud": ["AWS", "Google Cloud (GCP)", "Azure", "Vercel", "Heroku", "DigitalOcean"],
+    "containers": ["Docker", "Kubernetes", "Podman", "Helm"],
+    "ci_cd": ["GitHub Actions", "GitLab CI", "Jenkins", "CircleCI", "Travis CI", "ArgoCD"],
+    "iac": ["Terraform", "CloudFormation", "Ansible", "Pulumi"]
+  },
+  "data_science": {
+    "languages": ["Python", "R", "Julia", "SQL", "Scala"],
+    "libraries": ["Pandas", "NumPy", "Scikit-Learn", "TensorFlow", "PyTorch", "Keras"],
+    "concepts": ["Machine Learning", "Deep Learning", "NLP", "Computer Vision", "Data Engineering", "ETL"]
+  },
+  "soft_skills": {
+    "leadership": ["Mentoring", "Agile", "Scrum", "Project Management", "Cross-functional Leadership"],
+    "communication": ["Technical Writing", "Public Speaking", "Stakeholder Management", "Conflict Resolution"]
+  }
+}
