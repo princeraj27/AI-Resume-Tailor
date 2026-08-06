@@ -117,23 +117,23 @@ function PracticeContent() {
 
     setIsEvaluating(true);
     try {
-      await evaluateAnswer(currentItem.question, answerText);
+      const evalFeedback = await evaluateAnswer(currentItem.question, answerText);
 
-      // Update current item in shared state
+      // Update current item in shared state with FRESH feedback
       const updatedItems = [...practiceItems];
       updatedItems[currentStepIndex] = {
         ...currentItem,
         answer: answerText,
-        feedback: feedback || null,
+        feedback: evalFeedback || feedback || null,
         isEvaluated: true,
       };
       updateSession({ practiceItems: updatedItems });
 
       // Speak verbal feedback & audio suggestion in voice mode, then auto-advance
       if (mode === "voice") {
-        const scoreVal = feedback?.score || 80;
-        const mainObs = feedback?.feedback?.[0] || "Answer evaluated.";
-        const improved = feedback?.improvedAnswer || "";
+        const scoreVal = evalFeedback?.score || 80;
+        const mainObs = evalFeedback?.feedback?.[0] || "Answer evaluated.";
+        const improved = evalFeedback?.improvedAnswer || "";
         
         let verbalSpeech = `Your answer scored ${scoreVal} out of 100. ${mainObs}`;
         if (scoreVal < 95 && improved) {

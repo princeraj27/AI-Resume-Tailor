@@ -16,7 +16,7 @@ export interface UseAgentReturn {
   
   analyzeResume: (file: File, jobDescription?: string) => Promise<void>;
   generateQuestions: (resumeText: string, jobDescription?: string) => Promise<void>;
-  evaluateAnswer: (question: string, answer: string) => Promise<void>;
+  evaluateAnswer: (question: string, answer: string) => Promise<FeedbackResult | null>;
   reset: () => void;
 }
 
@@ -44,7 +44,7 @@ export function useAgent(): UseAgentReturn {
     } finally {
       setIsLoading(false);
     }
-  }, [session.jobDescription, updateSession]);
+  }, [session.resumeText, session.jobDescription, updateSession]);
 
   const generateQuestions = useCallback(async (resumeText: string, jobDescription?: string) => {
     setIsLoading(true);
@@ -73,20 +73,23 @@ export function useAgent(): UseAgentReturn {
     }
   }, [session.resumeText, session.jobDescription, session.agentTrace, session.ragContext, updateSession]);
 
-  const evaluateAnswer = useCallback(async (question: string, answer: string) => {
+  const evaluateAnswer = useCallback(async (question: string, answer: string): Promise<FeedbackResult | null> => {
     setIsLoading(true);
     setError(null);
     try {
       const res = await agentEvaluateAnswer(question, answer);
-      if (res.feedback) {
-        setFeedback(res.feedback);
+      const evalFeedback = res.feedback || null;
+      if (evalFeedback) {
+        setFeedback(evalFeedback);
       }
       updateSession({
         agentTrace: [...session.agentTrace, ...(res.agentTrace || [])],
         ragContext: res.ragContext || session.ragContext,
       });
+      return evalFeedback;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to evaluate answer');
+      return null;
     } finally {
       setIsLoading(false);
     }
