@@ -21,6 +21,7 @@ export abstract class BaseAgent {
     const params: any = {
       model: this.model,
       messages,
+      temperature: 0.1,
     };
 
     if (options?.json) {

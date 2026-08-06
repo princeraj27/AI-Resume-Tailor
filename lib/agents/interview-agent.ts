@@ -105,9 +105,13 @@ RAG Exemplary STAR Answers for Reference:
 ${JSON.stringify(starExamples, null, 2)}
 `;
 
+    const rawAnswer = (state.userAnswer || '').trim();
+    const cleanAnswer = rawAnswer ? rawAnswer.charAt(0).toUpperCase() + rawAnswer.slice(1) : '';
+    const normalizedAnswer = cleanAnswer && !/[.!?]$/.test(cleanAnswer) ? cleanAnswer + '.' : cleanAnswer;
+
     const userPrompt = `
 Question: ${state.currentQuestion}
-Candidate Answer: ${state.userAnswer}
+Candidate Answer: ${normalizedAnswer}
 `;
 
     const fallback: FeedbackResult = {
