@@ -21,11 +21,11 @@ export default function RootLayout({
     <html lang="en" className="dark" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans antialiased`} suppressHydrationWarning>
         <AppProviders>
-          <div className="flex h-screen bg-background">
+          <div className="flex flex-col md:flex-row h-screen bg-background overflow-hidden">
             <Sidebar />
-            <div className="flex-1 flex flex-col overflow-hidden">
+            <div className="flex-1 flex flex-col h-full overflow-hidden">
               <Header />
-              <main className="flex-1 overflow-auto p-6 relative">
+              <main className="flex-1 overflow-y-auto p-4 sm:p-6 relative">
                 {children}
               </main>
             </div>
