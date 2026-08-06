@@ -48,7 +48,7 @@ export default function Home() {
   ];
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 pb-16">
+    <div className="max-w-6xl mx-auto space-y-8 pb-16 px-4 sm:px-6 md:px-8">
       {/* Hero Header */}
       <div className="text-center space-y-3 pt-6">
         <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">

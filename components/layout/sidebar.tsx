@@ -9,6 +9,7 @@ import {
   Sparkles,
   ChevronLeft,
   Menu,
+  X
 } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -27,19 +28,49 @@ export function Sidebar() {
 
   return (
     <>
-      <div className="md:hidden p-4 flex items-center justify-between border-b border-border bg-card">
+      {/* Mobile Top Navigation Bar */}
+      <div className="md:hidden px-4 py-3 flex items-center justify-between border-b border-border bg-card sticky top-0 z-50">
         <div className="flex items-center gap-2">
           <Brain className="w-6 h-6 text-primary" />
           <span className="font-bold text-sm">AI Career Intel</span>
         </div>
-        <Button variant="ghost" size="icon" onClick={() => setMobileOpen(!mobileOpen)}>
-          <Menu className="w-6 h-6" />
+        <Button variant="ghost" size="icon" onClick={() => setMobileOpen(!mobileOpen)} aria-label="Toggle mobile menu">
+          {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
         </Button>
       </div>
 
+      {/* Mobile Slide-down Menu Drawer */}
+      {mobileOpen && (
+        <div className="md:hidden fixed inset-x-0 top-14 bg-card/95 backdrop-blur-lg border-b border-border p-4 z-40 space-y-2 shadow-xl animate-in slide-in-from-top-2 duration-200">
+          <nav className="space-y-1.5">
+            {navItems.map((item) => {
+              const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
+              const Icon = item.icon;
+              
+              return (
+                <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)}>
+                  <div
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors font-medium",
+                      isActive 
+                        ? "bg-primary text-primary-foreground font-semibold" 
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    )}
+                  >
+                    <Icon className="w-5 h-5 flex-shrink-0" />
+                    <span>{item.label}</span>
+                  </div>
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+      )}
+
+      {/* Desktop Sidebar Navigation */}
       <aside
         className={cn(
-          "hidden md:flex flex-col h-screen border-r border-border bg-card text-card-foreground relative transition-all duration-200",
+          "hidden md:flex flex-col h-screen border-r border-border bg-card text-card-foreground relative transition-all duration-200 sticky top-0",
           collapsed ? "w-16" : "w-64"
         )}
       >
