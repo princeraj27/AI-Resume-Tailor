@@ -83,11 +83,13 @@ export function useVoice() {
     }, 1000);
 
     silenceTimerRef.current = setTimeout(() => {
-      clearSilenceTimers();
       const textToSubmit = latestTranscriptRef.current.trim();
-      if (textToSubmit && onSilenceAutoSubmitRef.current) {
+      const cb = onSilenceAutoSubmitRef.current;
+      clearSilenceTimers();
+      if (textToSubmit && cb) {
+        onSilenceAutoSubmitRef.current = null;
         stopListening();
-        onSilenceAutoSubmitRef.current(textToSubmit);
+        cb(textToSubmit);
       }
     }, 5000);
   };
@@ -116,8 +118,14 @@ export function useVoice() {
         resetSilenceTimer(fullText);
       },
       onEnd: () => {
-        updateState({ isListening: false });
+        const textToSubmit = latestTranscriptRef.current.trim();
+        const cb = onSilenceAutoSubmitRef.current;
         clearSilenceTimers();
+        updateState({ isListening: false });
+        if (textToSubmit && cb) {
+          onSilenceAutoSubmitRef.current = null;
+          cb(textToSubmit);
+        }
       },
       onError: (error: string) => {
         updateState({ error, isListening: false });

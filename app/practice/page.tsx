@@ -173,19 +173,21 @@ function PracticeContent() {
     }
   };
 
-  // Voice mode 5s silence auto-submit
-  const handleVoiceAutoSubmit = useCallback(async (transcriptText: string) => {
-    if (!transcriptText.trim() || !currentItem) return;
-    await handleEvaluateCurrentAnswer(transcriptText);
-  }, [currentItem, handleEvaluateCurrentAnswer]);
+  // Ref for evaluate handler to avoid stale closures during voice auto-submit
+  const handleEvaluateRef = useRef(handleEvaluateCurrentAnswer);
+  useEffect(() => {
+    handleEvaluateRef.current = handleEvaluateCurrentAnswer;
+  }, [handleEvaluateCurrentAnswer]);
 
   const handleStartVoiceListen = useCallback(() => {
     startListening({
       onSilenceAutoSubmit: (transcriptText) => {
-        handleVoiceAutoSubmit(transcriptText);
+        if (transcriptText.trim() && handleEvaluateRef.current) {
+          handleEvaluateRef.current(transcriptText);
+        }
       }
     });
-  }, [startListening, handleVoiceAutoSubmit]);
+  }, [startListening]);
 
   const voiceInterfaceState: VoiceState = voiceStateObj.isListening
     ? "listening"

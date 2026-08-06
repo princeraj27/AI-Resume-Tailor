@@ -35,18 +35,18 @@ export class SpeechRecognitionService {
     this.recognition.interimResults = options.interimResults ?? false;
 
     this.recognition.onresult = (event: any) => {
-      let transcript = '';
+      let fullTranscript = '';
       let isFinal = false;
 
-      for (let i = event.resultIndex; i < event.results.length; ++i) {
-        transcript += event.results[i][0].transcript;
+      for (let i = 0; i < event.results.length; ++i) {
+        fullTranscript += event.results[i][0].transcript;
         if (event.results[i].isFinal) {
           isFinal = true;
         }
       }
 
       if (options.onResult) {
-        options.onResult(transcript.trim(), isFinal);
+        options.onResult(fullTranscript.trim(), isFinal);
       }
     };
 
