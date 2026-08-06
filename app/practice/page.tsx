@@ -129,10 +129,18 @@ function PracticeContent() {
       };
       updateSession({ practiceItems: updatedItems });
 
-      // Speak verbal feedback in voice mode, then auto-advance
+      // Speak verbal feedback & audio suggestion in voice mode, then auto-advance
       if (mode === "voice") {
-        const feedbackText = feedback?.feedback?.[0] || "Good answer. Moving to the next question.";
-        speakText(feedbackText, () => {
+        const scoreVal = feedback?.score || 80;
+        const mainObs = feedback?.feedback?.[0] || "Answer evaluated.";
+        const improved = feedback?.improvedAnswer || "";
+        
+        let verbalSpeech = `Your answer scored ${scoreVal} out of 100. ${mainObs}`;
+        if (scoreVal < 95 && improved) {
+          verbalSpeech += ` Here is an audio suggestion to make your answer perfect: ${improved}`;
+        }
+
+        speakText(verbalSpeech, () => {
           if (currentStepIndex < practiceItems.length - 1) {
             setTimeout(() => {
               setCurrentStepIndex(prev => prev + 1);
@@ -142,7 +150,7 @@ function PracticeContent() {
           } else {
             setTimeout(() => {
               setShowOverallSummary(true);
-              speakText("Interview complete. Generating your overall performance report.");
+              speakText("Interview session complete. Generating your overall performance report.");
             }, 1000);
           }
         });
@@ -509,6 +517,28 @@ function PracticeContent() {
                         </li>
                       ))}
                     </ul>
+                  </div>
+                )}
+
+                {/* Audio Improvement Suggestion */}
+                {activeFeedback.improvedAnswer && (
+                  <div className="p-3.5 rounded-lg border border-cyan-500/30 bg-cyan-500/10 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
+                        <Volume2 className="w-4 h-4" /> Audio Improvement Suggestion
+                      </span>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => speakText(`Audio Suggestion: ${activeFeedback.improvedAnswer}`)}
+                        className="text-xs gap-1.5 py-1 h-7 text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/20"
+                      >
+                        <Volume2 className="w-3.5 h-3.5" /> Listen to Audio
+                      </Button>
+                    </div>
+                    <p className="text-xs text-foreground leading-relaxed italic">
+                      &quot;{activeFeedback.improvedAnswer}&quot;
+                    </p>
                   </div>
                 )}
               </Card>

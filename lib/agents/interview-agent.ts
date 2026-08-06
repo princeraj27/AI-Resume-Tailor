@@ -87,13 +87,16 @@ GRADE MAPPING:
 - 60-69: "Needs Work (C)"
 - <60: "No Hire (D)"
 
+AUDIO SUGGESTION INSTRUCTION:
+If the candidate's response is not perfect (score < 95), provide a clear, concise 2-sentence model response in "improvedAnswer" demonstrating how to reframe their answer with STAR metrics.
+
 Return ONLY valid JSON matching this structure:
 {
   "starBreakdown": { "situation": 22, "task": 20, "action": 22, "result": 21 },
   "score": 85,
   "grade": "Hire (A)",
   "feedback": ["Great technical depth in action phase", "Add more quantifiable metrics to result phase"],
-  "improvedAnswer": "Detailed improved answer string...",
+  "improvedAnswer": "In my previous role as tech lead, I spearheaded our backend database refactoring which reduced p99 query latency by 45% and saved 120 server compute hours monthly.",
   "strengths": ["Clear communication", "Technical depth"],
   "weaknesses": ["Needs more quantifiable metrics"]
 }
