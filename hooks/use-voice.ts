@@ -109,11 +109,10 @@ export function useVoice() {
       onResult: (text, isFinal) => {
         const fullText = text.trim();
         latestTranscriptRef.current = fullText;
-        if (isFinal) {
-          updateState({ transcript: fullText, interimTranscript: '' });
-        } else {
-          updateState({ interimTranscript: fullText });
-        }
+        updateState({ 
+          transcript: fullText, 
+          interimTranscript: fullText 
+        });
         // User spoke something: reset silence auto-submit timer (5s)
         resetSilenceTimer(fullText);
       },
