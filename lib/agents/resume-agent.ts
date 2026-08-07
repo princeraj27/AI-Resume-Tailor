@@ -50,7 +50,7 @@ Resume Text:
 ${resumeText}
 
 Job Description:
-${jobDescription || 'N/A'}
+${jobDescription || 'Software Engineer role with focus on web development and cloud technologies.'}
 `;
 
     const fallback: AnalysisOutput = {
