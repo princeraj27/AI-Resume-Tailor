@@ -124,16 +124,16 @@ function PracticeContent() {
       updatedItems[currentStepIndex] = {
         ...currentItem,
         answer: answerText,
-        feedback: evalFeedback || feedback || null,
+        feedback: evalFeedback ?? null,
         isEvaluated: true,
       };
       updateSession({ practiceItems: updatedItems });
 
       // Speak verbal feedback & audio suggestion in voice mode, then auto-advance
       if (mode === "voice") {
-        const scoreVal = evalFeedback?.score || 80;
-        const mainObs = evalFeedback?.feedback?.[0] || "Answer evaluated.";
-        const improved = evalFeedback?.improvedAnswer || "";
+        const scoreVal = evalFeedback?.score ?? 0;
+        const mainObs = evalFeedback?.feedback?.[0] ?? "Answer evaluated.";
+        const improved = evalFeedback?.improvedAnswer ?? "";
         
         let verbalSpeech = `Your answer scored ${scoreVal} out of 100. ${mainObs}`;
         if (scoreVal < 95 && improved) {
@@ -239,13 +239,13 @@ function PracticeContent() {
 
   const activeFeedback = currentItem?.feedback || (currentItem?.isEvaluated ? feedback : null);
 
-  // Math consistency calculations
-  const sitScore = Math.max(0, Math.min(25, Number(activeFeedback?.starBreakdown?.situation ?? 20)));
-  const taskScore = Math.max(0, Math.min(25, Number(activeFeedback?.starBreakdown?.task ?? 18)));
-  const actScore = Math.max(0, Math.min(25, Number(activeFeedback?.starBreakdown?.action ?? 20)));
-  const resScore = Math.max(0, Math.min(25, Number(activeFeedback?.starBreakdown?.result ?? 17)));
+  // Math consistency calculations — use ?? 0 so real zero scores are never masked
+  const sitScore = Math.max(0, Math.min(25, Number(activeFeedback?.starBreakdown?.situation ?? 0)));
+  const taskScore = Math.max(0, Math.min(25, Number(activeFeedback?.starBreakdown?.task ?? 0)));
+  const actScore = Math.max(0, Math.min(25, Number(activeFeedback?.starBreakdown?.action ?? 0)));
+  const resScore = Math.max(0, Math.min(25, Number(activeFeedback?.starBreakdown?.result ?? 0)));
   const calculatedScore = sitScore + taskScore + actScore + resScore;
-  const calculatedGrade = activeFeedback?.grade || (
+  const calculatedGrade = activeFeedback?.grade ?? (
     calculatedScore >= 90 ? "Strong Hire (A+)" :
     calculatedScore >= 80 ? "Hire (A)" :
     calculatedScore >= 70 ? "Leaning Hire (B)" :
@@ -253,10 +253,10 @@ function PracticeContent() {
   );
   const evaluationTheme = getEvaluationTheme(calculatedScore);
 
-  // Overall Session Performance Metrics Calculation
-  const evaluatedItems = practiceItems.filter(i => i.isEvaluated && i.feedback?.score);
-  const totalSessionScore = evaluatedItems.reduce((acc, curr) => acc + (curr.feedback?.score || 0), 0);
-  const averageSessionScore = evaluatedItems.length > 0 ? Math.round(totalSessionScore / evaluatedItems.length) : 85;
+  // Overall Session Performance Metrics — include items with score 0 too
+  const evaluatedItems = practiceItems.filter(i => i.isEvaluated && i.feedback != null);
+  const totalSessionScore = evaluatedItems.reduce((acc, curr) => acc + (curr.feedback?.score ?? 0), 0);
+  const averageSessionScore = evaluatedItems.length > 0 ? Math.round(totalSessionScore / evaluatedItems.length) : 0;
 
   const overallGrade = averageSessionScore >= 90
     ? "Strong Hire (A+)"
@@ -342,17 +342,22 @@ function PracticeContent() {
           <div className="space-y-3">
             <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Session Questions & Ratings</h3>
             <div className="space-y-2">
-              {practiceItems.map((item, idx) => (
+              {practiceItems.map((item, idx) => {
+                const qScore = item.feedback?.score ?? 0;
+                const qGrade = item.feedback?.grade ?? 'No Hire (D)';
+                const qTheme = getEvaluationTheme(qScore);
+                return (
                 <div key={item.id} className="p-3 rounded-lg border border-border bg-card flex items-center justify-between text-xs">
                   <div className="space-y-0.5 max-w-xl">
                     <span className="font-bold text-muted-foreground">Q{idx + 1}:</span>
                     <p className="font-medium text-foreground line-clamp-1">{item.question}</p>
                   </div>
-                  <Badge variant="outline" className="font-bold text-xs bg-emerald-500/10 text-emerald-500 border-emerald-500/20">
-                    {item.feedback?.score || 85}/100 ({item.feedback?.grade || 'Hire'})
+                  <Badge variant="outline" className={`font-bold text-xs ${qTheme.badgeOutline}`}>
+                    {qScore}/100 ({qGrade})
                   </Badge>
                 </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
