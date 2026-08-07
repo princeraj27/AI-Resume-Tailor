@@ -10,7 +10,7 @@ export interface VoiceState {
   isProcessing: boolean;
   transcript: string;
   interimTranscript: string;
-  silenceCountdown: number | null; // 5..1 seconds remaining before auto-submit
+  silenceCountdown: number | null;
   conversation: { role: 'user' | 'ai'; text: string; timestamp: number }[];
   error: string | null;
   isSupported: boolean;
@@ -35,6 +35,8 @@ export function useVoice() {
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const latestTranscriptRef = useRef<string>('');
   const onSilenceAutoSubmitRef = useRef<((transcript: string) => void) | null>(null);
+  const hasSubmittedRef = useRef<boolean>(false);
+  const isListeningRef = useRef<boolean>(false);
 
   useEffect(() => {
     recognitionRef.current = new SpeechRecognitionService();
@@ -50,11 +52,11 @@ export function useVoice() {
     };
   }, []);
 
-  const updateState = (updates: Partial<VoiceState>) => {
+  const updateState = useCallback((updates: Partial<VoiceState>) => {
     setState(s => ({ ...s, ...updates }));
-  };
+  }, []);
 
-  const clearSilenceTimers = () => {
+  const clearSilenceTimers = useCallback(() => {
     if (silenceTimerRef.current) {
       clearTimeout(silenceTimerRef.current);
       silenceTimerRef.current = null;
@@ -63,45 +65,60 @@ export function useVoice() {
       clearInterval(countdownIntervalRef.current);
       countdownIntervalRef.current = null;
     }
-    updateState({ silenceCountdown: null });
-  };
+    setState(s => ({ ...s, silenceCountdown: null }));
+  }, []);
 
-  const resetSilenceTimer = (currentText: string) => {
+  // Fire the auto-submit callback exactly once
+  const fireAutoSubmit = useCallback((text: string) => {
+    if (hasSubmittedRef.current) return; // prevent double-submit
+    const cb = onSilenceAutoSubmitRef.current;
+    if (!text.trim() || !cb) return;
+    hasSubmittedRef.current = true;
+    onSilenceAutoSubmitRef.current = null;
+    cb(text);
+  }, []);
+
+  const resetSilenceTimer = useCallback((currentText: string) => {
     clearSilenceTimers();
-    if (!currentText.trim()) return; // Don't start timer if no text spoken yet
+    if (!currentText.trim()) return;
 
     let secondsLeft = 5;
-    updateState({ silenceCountdown: secondsLeft });
+    setState(s => ({ ...s, silenceCountdown: secondsLeft }));
 
     countdownIntervalRef.current = setInterval(() => {
       secondsLeft -= 1;
       if (secondsLeft > 0) {
-        updateState({ silenceCountdown: secondsLeft });
+        setState(s => ({ ...s, silenceCountdown: secondsLeft }));
       } else {
         if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
       }
     }, 1000);
 
     silenceTimerRef.current = setTimeout(() => {
-      const textToSubmit = latestTranscriptRef.current.trim();
-      const cb = onSilenceAutoSubmitRef.current;
       clearSilenceTimers();
-      if (textToSubmit && cb) {
-        onSilenceAutoSubmitRef.current = null;
-        stopListening();
-        cb(textToSubmit);
+      const textToSubmit = latestTranscriptRef.current.trim();
+      if (textToSubmit) {
+        // Stop recognition first, then submit
+        if (recognitionRef.current) {
+          recognitionRef.current.stop();
+        }
+        isListeningRef.current = false;
+        setState(s => ({ ...s, isListening: false }));
+        fireAutoSubmit(textToSubmit);
       }
     }, 5000);
-  };
+  }, [clearSilenceTimers, fireAutoSubmit]);
 
   const startListening = useCallback((options?: { onSilenceAutoSubmit?: (transcript: string) => void }) => {
     if (!recognitionRef.current) return;
     
     clearSilenceTimers();
     latestTranscriptRef.current = '';
+    hasSubmittedRef.current = false; // reset submit guard
     onSilenceAutoSubmitRef.current = options?.onSilenceAutoSubmit || null;
     
-    updateState({ error: null, transcript: '', interimTranscript: '', silenceCountdown: null });
+    setState(s => ({ ...s, error: null, transcript: '', interimTranscript: '', silenceCountdown: null, isListening: true }));
+    isListeningRef.current = true;
     
     recognitionRef.current.start({
       continuous: true,
@@ -109,38 +126,46 @@ export function useVoice() {
       onResult: (text, isFinal) => {
         const fullText = text.trim();
         latestTranscriptRef.current = fullText;
-        updateState({ 
+        setState(s => ({ 
+          ...s, 
           transcript: fullText, 
           interimTranscript: fullText 
-        });
-        // User spoke something: reset silence auto-submit timer (5s)
+        }));
+        // Reset silence timer on every speech event
         resetSilenceTimer(fullText);
       },
       onEnd: () => {
-        const textToSubmit = latestTranscriptRef.current.trim();
-        const cb = onSilenceAutoSubmitRef.current;
         clearSilenceTimers();
-        updateState({ isListening: false });
-        if (textToSubmit && cb) {
-          onSilenceAutoSubmitRef.current = null;
-          cb(textToSubmit);
+        isListeningRef.current = false;
+        setState(s => ({ ...s, isListening: false }));
+        // If recognition ended naturally (browser timeout etc.) and we have text, auto-submit
+        const textToSubmit = latestTranscriptRef.current.trim();
+        if (textToSubmit) {
+          fireAutoSubmit(textToSubmit);
         }
       },
       onError: (error: string) => {
-        updateState({ error, isListening: false });
+        // 'no-speech' is not a real error, just means user hasn't spoken yet
+        if (error === 'no-speech') return;
         clearSilenceTimers();
+        isListeningRef.current = false;
+        setState(s => ({ ...s, error, isListening: false }));
       }
     });
-    
-    updateState({ isListening: true });
-  }, []);
+  }, [clearSilenceTimers, resetSilenceTimer, fireAutoSubmit]);
 
   const stopListening = useCallback(() => {
     clearSilenceTimers();
+    isListeningRef.current = false;
     if (recognitionRef.current) {
       recognitionRef.current.stop();
-      updateState({ isListening: false });
     }
+    setState(s => ({ ...s, isListening: false }));
+  }, [clearSilenceTimers]);
+
+  // Get the latest transcript (always from ref, never stale React state)
+  const getLatestTranscript = useCallback(() => {
+    return latestTranscriptRef.current.trim();
   }, []);
 
   const speakText = useCallback((text: string, onEnd?: () => void) => {
@@ -149,11 +174,11 @@ export function useVoice() {
       return;
     }
 
-    updateState({ isSpeaking: true });
+    setState(s => ({ ...s, isSpeaking: true }));
     synthesisRef.current.speak(text, {
-      onStart: () => updateState({ isSpeaking: true }),
+      onStart: () => setState(s => ({ ...s, isSpeaking: true })),
       onEnd: () => {
-        updateState({ isSpeaking: false });
+        setState(s => ({ ...s, isSpeaking: false }));
         if (onEnd) onEnd();
       }
     });
@@ -162,15 +187,16 @@ export function useVoice() {
   const stopSpeaking = useCallback(() => {
     if (synthesisRef.current) {
       synthesisRef.current.stop();
-      updateState({ isSpeaking: false });
+      setState(s => ({ ...s, isSpeaking: false }));
     }
   }, []);
 
   const processTranscript = useCallback(async (text: string, question: string) => {
-    updateState({ 
+    setState(s => ({ 
+      ...s,
       isProcessing: true,
-      conversation: [...state.conversation, { role: 'user', text, timestamp: Date.now() }] 
-    });
+      conversation: [...s.conversation, { role: 'user', text, timestamp: Date.now() }] 
+    }));
 
     try {
       const response = await fetch('/api/voice', {
@@ -199,29 +225,30 @@ export function useVoice() {
 
       if (synthesisRef.current) {
         await synthesisRef.current.speakStreaming(generateStream(), {
-          onStart: () => updateState({ isSpeaking: true, isProcessing: false }),
+          onStart: () => setState(s => ({ ...s, isSpeaking: true, isProcessing: false })),
           onEnd: () => {
-            updateState({ 
+            setState(s => ({ 
+              ...s,
               isSpeaking: false,
               conversation: [
-                ...state.conversation,
-                { role: 'user', text, timestamp: Date.now() },
+                ...s.conversation,
                 { role: 'ai', text: fullAiResponse, timestamp: Date.now() }
               ]
-            });
+            }));
           }
         });
       }
     } catch (error) {
-      updateState({ 
+      setState(s => ({ 
+        ...s,
         error: error instanceof Error ? error.message : 'Unknown error',
         isProcessing: false 
-      });
+      }));
     }
-  }, [state.conversation]);
+  }, []);
 
   const clearConversation = useCallback(() => {
-    updateState({ conversation: [] });
+    setState(s => ({ ...s, conversation: [] }));
   }, []);
 
   return {
@@ -231,6 +258,7 @@ export function useVoice() {
     speakText,
     stopSpeaking,
     processTranscript,
-    clearConversation
+    clearConversation,
+    getLatestTranscript,
   };
 }

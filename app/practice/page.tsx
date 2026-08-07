@@ -60,7 +60,7 @@ function PracticeContent() {
 
   const { session, updateSession } = useAppContext();
   const { generateQuestions, evaluateAnswer, interviewQuestions, feedback, isLoading, agentTrace } = useAgent();
-  const { state: voiceStateObj, startListening, stopListening, speakText, stopSpeaking } = useVoice();
+  const { state: voiceStateObj, startListening, stopListening, speakText, stopSpeaking, getLatestTranscript } = useVoice();
 
   const [mode, setMode] = useState<"text" | "voice">(initialMode);
   const [currentStepIndex, setCurrentStepIndex] = useState<number>(0);
@@ -199,10 +199,11 @@ function PracticeContent() {
 
   const handleToggleVoiceListen = () => {
     if (voiceStateObj.isListening) {
+      // Use ref-based transcript (always fresh, never stale React state)
+      const latestText = getLatestTranscript();
       stopListening();
-      if (voiceStateObj.transcript || voiceStateObj.interimTranscript) {
-        const text = (voiceStateObj.transcript || voiceStateObj.interimTranscript).trim();
-        if (text) handleEvaluateCurrentAnswer(text);
+      if (latestText) {
+        handleEvaluateRef.current(latestText);
       }
     } else if (voiceStateObj.isSpeaking) {
       stopSpeaking();

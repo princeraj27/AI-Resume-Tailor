@@ -105,9 +105,18 @@ RAG Exemplary STAR Answers for Reference:
 ${JSON.stringify(starExamples, null, 2)}
 `;
 
+    // Normalize answer: capitalize sentences, add punctuation, clean STT artifacts
+    // This ensures voice transcripts are evaluated identically to typed text
     const rawAnswer = (state.userAnswer || '').trim();
-    const cleanAnswer = rawAnswer ? rawAnswer.charAt(0).toUpperCase() + rawAnswer.slice(1) : '';
-    const normalizedAnswer = cleanAnswer && !/[.!?]$/.test(cleanAnswer) ? cleanAnswer + '.' : cleanAnswer;
+    const normalizedAnswer = rawAnswer
+      // Capitalize first letter of each sentence
+      .replace(/(^|\.\s+|!\s+|\?\s+)([a-z])/g, (_, sep, ch) => sep + ch.toUpperCase())
+      // Capitalize the very first character
+      .replace(/^[a-z]/, ch => ch.toUpperCase())
+      // Collapse multiple spaces into one
+      .replace(/\s{2,}/g, ' ')
+      // Add trailing period if missing
+      .replace(/([^.!?])$/, '$1.');
 
     const userPrompt = `
 Question: ${state.currentQuestion}
