@@ -1,0 +1,490 @@
+\documentclass[aspectratio=169, 10pt]{beamer}
+
+% --- PACKAGES & THEME SETUP ---
+\mode<presentation> {
+  \usetheme{Madrid}
+  \usecolortheme{whale}
+  \usefonttheme{professionalfonts}
+}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning}
+
+% --- COLOR PALETTE ---
+\definecolor{TechPrimary}{RGB}{15, 23, 42}    % Dark Slate
+\definecolor{TechAccent}{RGB}{6, 182, 212}    % Cyan
+\definecolor{TechEmerald}{RGB}{16, 185, 129}  % Emerald
+\definecolor{TechAmber}{RGB}{245, 158, 11}   % Amber
+\definecolor{TechCodeBg}{RGB}{241, 245, 249}  % Slate 100
+
+\setbeamercolor{palette primary}{bg=TechPrimary, fg=white}
+\setbeamercolor{palette secondary}{bg=TechPrimary!90, fg=white}
+\setbeamercolor{palette tertiary}{bg=TechAccent, fg=white}
+\setbeamercolor{titlelike}{bg=TechPrimary, fg=white}
+\setbeamercolor{frametitle}{bg=TechPrimary, fg=white}
+\setbeamercolor{structure}{fg=TechAccent}
+
+% --- CODE LISTINGS CONFIG ---
+\lstset{
+  language=JavaScript,
+  backgroundcolor=\color{TechCodeBg},
+  basicstyle=\ttfamily\tiny,
+  keywordstyle=\color{blue}\bfseries,
+  stringstyle=\color{TechEmerald},
+  commentstyle=\color{gray}\itshape,
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  stepnumber=1,
+  breaklines=true,
+  frame=single,
+  rulecolor=\color{gray!30}
+}
+
+% --- METADATA ---
+\title[AI Career Intel Platform]{AI Career Intelligence Platform}
+\subtitle{Multi-Agent Supervisor Systems, In-Memory RAG, MCP Tools \& Voice AI}
+\author[Faculty Development Program]{Faculty Development Program (FDP) Demonstration}
+\institute[Computer Science \& AI]{Department of Computer Science \& Artificial Intelligence}
+\date{\today}
+
+\begin{document}
+
+% ==========================================
+% SLIDE 1: TITLE
+% ==========================================
+\begin{frame}
+  \titlepage
+\end{frame}
+
+% ==========================================
+% SLIDE 2: EXECUTIVE SUMMARY
+% ==========================================
+\begin{frame}{Executive Summary \& Workshop Objectives}
+  \begin{columns}
+    \begin{column}{0.55\textwidth}
+      \textbf{Project Overview:}
+      \begin{itemize}
+        \item State-of-the-art \alert{AI Career Intelligence Platform} built with Next.js 16 App Router, TypeScript, and Tailwind CSS v4.
+        \item Combines \textbf{Multi-Agent Orchestration}, \textbf{Vector RAG Grounding}, \textbf{Model Context Protocol (MCP)}, and \textbf{Hands-Free Voice AI}.
+      \end{itemize}
+      
+      \vspace{0.3cm}
+      \textbf{FDP Key Learning Outcomes:}
+      \begin{enumerate}
+        \item Master Multi-Agent Supervisor Patterns vs single-prompt LLMs.
+        \item Implement lightweight In-Memory RAG with local embeddings.
+        \item Integrate standardized MCP tools for real-time web/company data.
+        \item Deploy zero-latency hands-free Voice STT/TTS interview loops.
+      \end{enumerate}
+    \end{column}
+
+    \begin{column}{0.42\textwidth}
+      \begin{block}{Key Platform Capabilities}
+        \small
+        \begin{itemize}
+          \item \textbf{Parallel Multi-Agent Execution} ($<12$s budget)
+          \item \textbf{100-Point STAR Grading} (S+T+A+R=100)
+          \item \textbf{Inline RAG Grounding Badges}
+          \item \textbf{100\% Hands-Free Voice Practice}
+          \item \textbf{Score-Based Dynamic Panel Themes}
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ==========================================
+% SLIDE 3: MULTI-AGENT SUPERVISOR ARCHITECTURE
+% ==========================================
+\begin{frame}{Core Pillar 1: Multi-Agent Supervisor Orchestration}
+  \begin{columns}
+    \begin{column}{0.5\textwidth}
+      \textbf{The Supervisor Orchestration Pattern:}
+      \begin{itemize}
+        \item Instead of relying on a monolithic prompt, requests route to a centralized \alert{Orchestrator Agent} (\texttt{lib/agents/orchestrator.ts}).
+        \item Coordinates execution across 4 specialized sub-agents:
+      \end{itemize}
+      
+      \vspace{0.2cm}
+      \small
+      \begin{enumerate}
+        \item \textbf{Resume Analyst Agent}: Scores ATS compatibility, skill gaps, and bullet impact.
+        \item \textbf{Interview Coach Agent}: Generates STAR questions \& evaluates answers ($temp=0.1$).
+        \item \textbf{RAG Grounding Agent}: Fetches domain context from vector memory.
+        \item \textbf{Quality Critic Agent}: Evaluates output consistency using fast inference (\texttt{llama-3.1-8b-instant}).
+      \end{enumerate}
+    \end{column}
+
+    \begin{column}{0.48\textwidth}
+      \begin{block}{Pipeline Latency Bounding}
+        \small
+        \begin{itemize}
+          \item \textbf{Parallel Tool Execution}: RAG vector retrieval \& MCP tool calls execute concurrently via \texttt{Promise.all()}.
+          \item \textbf{Per-Agent Timeouts}: 8s upper bound per agent step with fallback heuristics.
+          \item \textbf{Total Pipeline Budget}: Hard limit at $\sim 12$ seconds for complete analysis.
+          \item \textbf{Stage Progress Streaming}: Pushes execution trace timeline updates to UI in real time.
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ==========================================
+% SLIDE 4: RETRIEVAL-AUGMENTED GENERATION (RAG)
+% ==========================================
+\begin{frame}{Core Pillar 2: In-Memory Retrieval-Augmented Generation (RAG)}
+  \begin{columns}
+    \begin{column}{0.5\textwidth}
+      \textbf{In-Memory Vector Store Architecture:}
+      \begin{itemize}
+        \item Powered by \texttt{MemoryVectorStore} and a custom \texttt{LocalEmbeddings} TF-IDF vectorizer (\texttt{lib/rag/embeddings.ts}).
+        \item \textbf{Zero Infrastructure Overhead}: Eliminates external vector database dependencies (Pinecone/Chroma).
+        \item Uses a 384-dimensional technical/career vocabulary derived from 4 curated JSON domain datasets:
+          \begin{itemize}
+            \item \texttt{interview-questions.json} (40+ questions)
+            \item \texttt{bullet-rewrites.json} (30+ transformations)
+            \item \texttt{star-examples.json} (15+ exemplary answers)
+            \item \texttt{industry-keywords.json} (100+ skill taxonomy)
+          \end{itemize}
+      \end{itemize}
+    \end{column}
+
+    \begin{column}{0.48\textwidth}
+      \begin{block}{Inline RAG Grounding \& Explorer}
+        \small
+        \begin{itemize}
+          \item \textbf{Inline Citations}: Actionable suggestions include expandable \texttt{GroundingCitation} badges displaying source snippet \& similarity score.
+          \item \textbf{Knowledge Explorer Tab}: Integrated in \texttt{/dashboard?tab=knowledge} to search, filter, and inspect vector chunks.
+          \item \textbf{Dynamic Vector Ingestion}: User-uploaded resume text and job descriptions are chunked (\texttt{RecursiveCharacterTextSplitter}) and ingested on-the-fly.
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ==========================================
+% SLIDE 5: MODEL CONTEXT PROTOCOL (MCP)
+% ==========================================
+\begin{frame}{Core Pillar 3: Model Context Protocol (MCP) Tools}
+  \begin{columns}
+    \begin{column}{0.52\textwidth}
+      \textbf{Standardized MCP Interface Layer:}
+      \begin{itemize}
+        \item Implements the \alert{Model Context Protocol} (\texttt{lib/mcp/client.ts}) allowing agents to query live external data sources beyond training cutoff dates.
+        \item Provides explicit parameter schemas, execution tracking, and execution duration logging.
+      \end{itemize}
+      
+      \vspace{0.2cm}
+      \textbf{Active Tool Registry (\texttt{lib/mcp/tool-registry.ts}):}
+      \begin{enumerate}
+        \item \texttt{web\_search}: Queries 2025 tech standards and industry skill trends.
+        \item \texttt{research\_company}: Fetches tech stack, engineering culture, and Glassdoor ratings (Google, Meta, Stripe, etc.).
+        \item \texttt{get\_github_profile}: Analyzes contribution frequency and top languages.
+      \end{enumerate}
+    \end{column}
+
+    \begin{column}{0.44\textwidth}
+      \begin{block}{MCP Activity Trace Display}
+        \small
+        Tool execution calls are recorded in \texttt{mcpToolCalls} state and rendered inside the interactive \textbf{Agent Activity Log} timeline:
+        \begin{itemize}
+          \item Tool Name \& Input Parameters
+          \item Structured Execution Result
+          \item Microsecond Timestamp \& Duration
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ==========================================
+% SLIDE 6: 100-POINT STAR EVALUATION MATRIX
+% ==========================================
+\begin{frame}{Core Pillar 4: Deterministic 100-Point STAR Grading Matrix}
+  \begin{columns}
+    \begin{column}{0.5\textwidth}
+      \textbf{100-Point Mathematical Formula:}
+      $$\text{Total Score (0--100)} = \text{S}(25) + \text{T}(25) + \text{A}(25) + \text{R}(25)$$
+      
+      \vspace{0.2cm}
+      \begin{table}
+        \tiny
+        \begin{tabular}{ccl}
+          \toprule
+          \textbf{Component} & \textbf{Max Pts} & \textbf{Evaluation Focus} \\
+          \midrule
+          Situation (S) & 25 & Context clarity \& problem complexity \\
+          Task (T)      & 25 & Challenge definition \& responsibility \\
+          Action (A)    & 25 & Technical depth \& personal initiatives \\
+          Result (R)    & 25 & Quantified metrics \& business impact \\
+          \bottomrule
+        \end{tabular}
+      \end{table}
+
+      \vspace{0.2cm}
+      \small
+      \textbf{Grade Tier Mapping:}
+      \begin{itemize}
+        \item \textbf{90--100}: Strong Hire (A+) \quad \textbf{80--89}: Hire (A)
+        \item \textbf{70--79}: Leaning Hire (B) \quad \textbf{60--69}: Needs Work (C)
+        \item \textbf{$<60$}: No Hire (D)
+      \end{itemize}
+    \end{column}
+
+    \begin{column}{0.48\textwidth}
+      \begin{block}{Strict Nullish Coalescing (\texttt{??})}
+        \small
+        \begin{itemize}
+          \item Uses strict \texttt{??} evaluation propagation to prevent falsy zero masking.
+          \item Off-topic/empty responses receive \textbf{0/100 (No Hire)} with Red panel styling — eliminating fake default scores.
+        \end{itemize}
+      \end{block}
+
+      \begin{block}{Score-Based Dynamic Panel Themes}
+        \small
+        Evaluation panel styling adapts automatically:
+        \begin{itemize}
+          \item \textbf{90+}: Emerald Theme (\texttt{border-emerald-500})
+          \item \textbf{80+}: Cyan Theme \quad \textbf{70+}: Blue Theme
+          \item \textbf{60+}: Amber Theme \quad \textbf{$<60$}: Red Theme
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ==========================================
+% SLIDE 7: HANDS-FREE VOICE SIMULATOR
+% ==========================================
+\begin{frame}{Core Pillar 5: 100\% Hands-Free Voice Interview Simulator}
+  \begin{columns}
+    \begin{column}{0.5\textwidth}
+      \textbf{Zero-Click Autonomous Voice Loop:}
+      \begin{enumerate}
+        \item \textbf{Question TTS}: AI reads current interview question aloud via Web Speech Synthesis.
+        \item \textbf{Mic Auto-Start}: Microphone activates automatically upon TTS completion.
+        \item \textbf{Real-Time STT Streaming}: Live scrolling transcript renders dynamically in an auto-expanding container.
+        \item \textbf{5s Silence Auto-Submit}: Timer triggers auto-submission after 5s silence (\texttt{fireAutoSubmit} guard).
+        \item \textbf{Verbal Audio Feedback}: AI speaks score, observations, and model STAR suggestions aloud.
+        \item \textbf{Auto-Advance}: Automatically advances to Question $N+1$.
+      \end{enumerate}
+    \end{column}
+
+    \begin{column}{0.48\textwidth}
+      \begin{block}{Voice Pipeline Hardening}
+        \small
+        \begin{itemize}
+          \item \textbf{Single-Submit Guard}: \texttt{hasSubmittedRef} prevents race conditions between silence timer \& STT \texttt{onend}.
+          \item \textbf{Ref-Based Transcript}: \texttt{getLatestTranscript()} reads non-stale text on manual stop.
+          \item \textbf{Non-Fatal Error Guard}: Gracefully ignores browser \texttt{no-speech} and \texttt{aborted} events.
+          \item \textbf{Spoken Audio Suggestion}: Verbally speaks a 2-sentence model response if score $<95$.
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ==========================================
+% SLIDE 8: SYSTEM ARCHITECTURE DIAGRAM
+% ==========================================
+\begin{frame}{System Architecture Block Diagram}
+  \centering
+  \begin{tikzpicture}[
+    node distance=1.2cm and 1.5cm,
+    block/.style={rectangle, draw=TechPrimary, fill=TechCodeBg, text centered, rounded corners, minimum height=0.7cm, font=\tiny\bfseries},
+    agent/.style={rectangle, draw=TechAccent, fill=TechAccent!10, text centered, rounded corners, minimum height=0.7cm, font=\tiny\bfseries},
+    storage/.style={ellipse, draw=TechEmerald, fill=TechEmerald!10, text centered, minimum height=0.7cm, font=\tiny\bfseries},
+    arrow/.style={-Latex, thick, TechPrimary}
+  ]
+    % Nodes
+    \node (ui) [block, width=3cm] {User Interface Layer\\(Next.js 16 App Router / Tailwind v4)};
+    \node (session) [block, right=of ui, width=3.2cm] {Session \& State Layer\\(\texttt{localStorage} + AppContext)};
+    \node (orchestrator) [agent, below=of session, width=3.5cm] {Multi-Agent Orchestrator\\(\texttt{lib/agents/orchestrator.ts})};
+    
+    \node (resume) [agent, below left=of orchestrator, width=2.5cm] {Resume Analyst Agent};
+    \node (interview) [agent, below=of orchestrator, width=2.5cm] {Interview Coach Agent};
+    \node (critic) [agent, below right=of orchestrator, width=2.5cm] {Quality Critic Agent};
+    
+    \node (rag) [storage, left=of resume, width=2.5cm] {In-Memory RAG\\(MemoryVectorStore)};
+    \node (mcp) [storage, right=of critic, width=2.5cm] {MCP Tool Registry\\(\texttt{web\_search}, \texttt{company})};
+
+    % Arrows
+    \draw [arrow] (ui) -- (session);
+    \draw [arrow] (session) -- (orchestrator);
+    \draw [arrow] (orchestrator) -- (resume);
+    \draw [arrow] (orchestrator) -- (interview);
+    \draw [arrow] (orchestrator) -- (critic);
+    \draw [arrow] (orchestrator) -- (rag);
+    \draw [arrow] (orchestrator) -- (mcp);
+  \end{tikzpicture}
+\end{frame}
+
+% ==========================================
+% SLIDE 9: CODE IMPLEMENTATION DEEP-DIVE
+% ==========================================
+\begin{frame}[fragile]{Code Deep-Dive: Deterministic Agent Evaluation}
+  \begin{columns}
+    \begin{column}{0.5\textwidth}
+\begin{lstlisting}[caption={Orchestrator Agent Parallel Pipeline}]
+export class OrchestratorAgent extends BaseAgent {
+  async executeTask(task: AgentTask, state: AgentState) {
+    switch (task) {
+      case 'analyze_resume':
+        // Stage 1: Document Ingestion
+        state = await ragAgent.ingestUserDocs(state);
+        
+        // Stage 2: Parallel RAG & MCP Execution
+        const [ragRes, mcpRes] = await Promise.all([
+          ragAgent.execute(state),
+          mcpClient.executeTool('web_search', { query: state.jobDescription })
+        ]);
+        
+        // Stage 3: Resume Scoring
+        state = await resumeAgent.execute(state);
+        
+        // Stage 4: Quality Reflection Review
+        return await criticAgent.reviewAnalysis(state);
+    }
+  }
+}
+\end{lstlisting}
+    \end{column}
+
+    \begin{column}{0.5\textwidth}
+\begin{lstlisting}[caption={Deterministic Interview Scoring (temp=0.1)}]
+export class BaseAgent {
+  protected client: OpenAI;
+  constructor(model?: string) {
+    this.client = new OpenAI({
+      baseURL: 'https://api.groq.com/openai/v1',
+      apiKey: process.env.GROQ_API_KEY,
+    });
+  }
+  protected async chat(messages, options) {
+    return await this.client.chat.completions.create({
+      model: this.model,
+      messages,
+      temperature: 0.1, // Deterministic evaluation
+      response_format: options?.json ? { type: 'json_object' } : undefined
+    });
+  }
+}
+\end{lstlisting}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ==========================================
+% SLIDE 10: STATE MANAGEMENT & RESPONSIVENESS
+% ==========================================
+\begin{frame}{Session Persistence \& Mobile Responsiveness}
+  \begin{columns}
+    \begin{column}{0.5\textwidth}
+      \textbf{Unified Session Persistence (\texttt{lib/session.ts}):}
+      \begin{itemize}
+        \item Backed by \texttt{localStorage} and React Context (\texttt{AppProviders}).
+        \item Shared seamlessly across routes:
+          \begin{itemize}
+            \item \textbf{Home (\texttt{/})}: Upload PDF, ATS score, "Active Session" banner.
+            \item \textbf{Dashboard (\texttt{/dashboard})}: Metrics, skills match, Knowledge Explorer.
+            \item \textbf{Practice Hub (\texttt{/practice})}: Single-question text & voice practice.
+          \end{itemize}
+        \item Clicking "New Session" resets state cleanly.
+      \end{itemize}
+    \end{column}
+
+    \begin{column}{0.48\textwidth}
+      \begin{block}{Full Mobile Responsiveness}
+        \small
+        \begin{itemize}
+          \item \textbf{Non-Blocking Sidebar}: Layout uses \texttt{flex flex-col md:flex-row} so sidebar takes \textbf{0\% width} on smartphones.
+          \item \textbf{Slide-Down Drawer}: Mobile header features a top navbar (\texttt{h-14}) with a slide-down menu drawer.
+          \item \textbf{Responsive Typography \& Cards}: Container padding (\texttt{px-4 sm:px-6 md:px-8}) and grid layouts adjust automatically.
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ==========================================
+% SLIDE 11: FACULTY DEMONSTRATION & HANDS-ON
+% ==========================================
+\begin{frame}{Faculty Demonstration \& Hands-On Lab Guide}
+  \begin{enumerate}
+    \item \textbf{Step 1: Resume Upload \& Multi-Agent Analysis}
+      \begin{itemize}
+        \item Navigate to \texttt{http://localhost:3000/}. Drag and drop a sample engineering resume PDF and paste a target Job Description.
+        \item Observe real-time progress trace logging as RAG, MCP, Resume Analyst, and Quality Critic agents execute concurrently.
+      \end{itemize}
+    
+    \vspace{0.2cm}
+    \item \textbf{Step 2: Dashboard Metrics \& Inline RAG Citations}
+      \begin{itemize}
+        \item View ATS compatibility gauge (0--100), matched/missing skills badges, and inline \texttt{GroundingCitation} sources.
+        \item Explore vector chunks under the \textbf{Knowledge Explorer} tab (\texttt{/dashboard?tab=knowledge}).
+      \end{itemize}
+    
+    \vspace{0.2cm}
+    \item \textbf{Step 3: Hands-Free Voice Mock Interview}
+      \begin{itemize}
+        \item Navigate to \textbf{Practice Hub} (\texttt{/practice?mode=voice}).
+        \item Experience hands-free voice auto-progression: AI reads question $\rightarrow$ Mic starts $\rightarrow$ Speak answer $\rightarrow$ 5s silence auto-submits $\rightarrow$ AI speaks 100-point STAR score and audio improvement suggestion aloud.
+      \end{itemize}
+  \end{enumerate}
+\end{frame}
+
+% ==========================================
+% SLIDE 12: KEY TAKEAWAYS & EDUCATIONAL IMPACT
+% ==========================================
+\begin{frame}{Key Takeaways \& Educational Value}
+  \begin{columns}
+    \begin{column}{0.5\textwidth}
+      \begin{block}{Pedagogical Significance}
+        \small
+        \begin{itemize}
+          \item Demonstrates modern production AI engineering patterns beyond simple chat prompts.
+          \item Serves as an exemplar template for teaching \textbf{Multi-Agent Systems}, \textbf{RAG}, and \textbf{Tool-Augmented LLMs}.
+          \item Highlights zero-infrastructure vector search and Web Speech API integration.
+        \end{itemize}
+      \end{block}
+    \end{column}
+
+    \begin{column}{0.48\textwidth}
+      \begin{block}{System Achievements}
+        \small
+        \begin{itemize}
+          \item \textbf{Sub-300ms Voice Latency}: Natural conversational flow.
+          \item \textbf{Deterministic STAR Scoring}: Strict mathematical score breakdown (S+T+A+R=100).
+          \item \textbf{Zero Falsy Score Masking}: Strict nullish coalescing (\texttt{??}).
+          \item \textbf{Production Ready}: 100\% Next.js static & dynamic prerendering verification.
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ==========================================
+% SLIDE 13: CONCLUSION & Q&A
+% ==========================================
+\begin{frame}
+  \centering
+  \vspace{1cm}
+  \Huge \textbf{\alert{Thank You!}}
+  
+  \vspace{0.5cm}
+  \Large Questions \& Technical Discussion
+  
+  \vspace{1cm}
+  \small
+  \textbf{Repository}: \texttt{https://github.com/princeraj27/AI-Resume-Tailor.git} \\
+  \textbf{Branch}: \texttt{main} \quad | \quad \textbf{Framework}: Next.js 16 App Router \& Groq AI
+\end{frame}
+
+\end{document}
