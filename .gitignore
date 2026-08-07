@@ -33,7 +33,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# LaTeX Build Output
+# LaTeX & Presentation Files
+*.tex
+/docs/
 *.aux
 *.bbl
 *.bcf
